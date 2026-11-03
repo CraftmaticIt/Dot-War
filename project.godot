@@ -1,0 +1,22 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+
+config/name="Dot War"
+run/main_scene="res://game/prototype.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=0
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+environment/defaults/default_clear_color=Color(0.043, 0.055, 0.078, 1)
+textures/vram_compression/import_etc2_astc=true

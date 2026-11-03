@@ -1,0 +1,7 @@
+.godot/
+.tools/
+addons/gut/
+.superpowers/
+build/
+*.apk
+*.aab
