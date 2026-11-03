@@ -86,8 +86,52 @@ func _produce() -> void:
 			n.garrison += 1
 			n.prod_acc -= TICK_HZ
 
+## Advance every group; resolve arrivals in group-id order (groups are kept id-sorted).
 func _move() -> void:
-	pass  # Task 5
+	var alive: Array[Dictionary] = []
+	for g in groups:
+		if not _advance(g):
+			alive.append(g)
+	groups = alive
+
+## Returns true when the group was consumed by a node this tick.
+func _advance(g: Dictionary) -> bool:
+	g.progress += GROUP_SPEED
+	while true:
+		var a: int = g.path[g.seg]
+		var b: int = g.path[g.seg + 1]
+		var seg_len := graph.edge_length(a, b)
+		if g.progress < seg_len:
+			return false
+		g.progress -= seg_len
+		g.seg += 1
+		var last: bool = g.seg == g.path.size() - 1
+		if last or graph.node(b).owner != g.owner:
+			_arrive(g, b)
+			return true
+	return false
+
+func _arrive(g: Dictionary, node_id: int) -> void:
+	var n := graph.node(node_id)
+	events.append({"type": "group_arrived", "group": g.id, "node": node_id})
+	if n.owner == g.owner:
+		n.garrison += g.count
+		return
+	n.garrison -= g.count
+	if n.garrison < 0:
+		n.owner = g.owner
+		n.garrison = -n.garrison
+		n.prod_acc = 0
+		events.append({"type": "node_captured", "node": node_id, "owner": g.owner})
+
+## Current position of a group in Fx, interpolated along its segment.
+func group_pos(g: Dictionary) -> Vector2i:
+	var a := graph.node(g.path[g.seg])
+	var b := graph.node(g.path[g.seg + 1])
+	var seg_len := graph.edge_length(a.id, b.id)
+	if seg_len == 0:
+		return Vector2i(a.x, a.y)
+	return Vector2i(a.x + (b.x - a.x) * g.progress / seg_len, a.y + (b.y - a.y) * g.progress / seg_len)
 
 func _towers() -> void:
 	pass  # Task 6
