@@ -1,0 +1,137 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": 1,
+        "x": -6000,
+        "y": 0,
+        "owner": 1,
+        "garrison": 30,
+        "prod_per_sec": 3,
+        "tower": "",
+        "prod_acc": 0
+      },
+      {
+        "id": 2,
+        "x": 6000,
+        "y": 0,
+        "owner": 2,
+        "garrison": 30,
+        "prod_per_sec": 3,
+        "tower": "",
+        "prod_acc": 0
+      },
+      {
+        "id": 3,
+        "x": 0,
+        "y": 0,
+        "owner": 0,
+        "garrison": 10,
+        "prod_per_sec": 2,
+        "tower": "",
+        "prod_acc": 0
+      },
+      {
+        "id": 4,
+        "x": 0,
+        "y": 5000,
+        "owner": 0,
+        "garrison": 5,
+        "prod_per_sec": 1,
+        "tower": "",
+        "prod_acc": 0
+      }
+    ],
+    "links": [
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        3,
+        4
+      ]
+    ]
+  },
+  "seed": 7,
+  "commands": [
+    {
+      "tick": 0,
+      "type": "send",
+      "owner": 1,
+      "from": 1,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 0,
+      "type": "send",
+      "owner": 2,
+      "from": 2,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 60,
+      "type": "send",
+      "owner": 1,
+      "from": 1,
+      "to": 4,
+      "percent": 75
+    },
+    {
+      "tick": 61,
+      "type": "send",
+      "owner": 2,
+      "from": 2,
+      "to": 3,
+      "percent": 100
+    },
+    {
+      "tick": 120,
+      "type": "send",
+      "owner": 1,
+      "from": 1,
+      "to": 2,
+      "percent": 100
+    },
+    {
+      "tick": 121,
+      "type": "send",
+      "owner": 2,
+      "from": 3,
+      "to": 1,
+      "percent": 90
+    },
+    {
+      "tick": 150,
+      "type": "send",
+      "owner": 1,
+      "from": 9,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 151,
+      "type": "send",
+      "owner": 2,
+      "from": 2,
+      "to": 3,
+      "percent": 0
+    }
+  ],
+  "ticks": 400,
+  "expected_hash": 3191907406
+}

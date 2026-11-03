@@ -1,0 +1,67 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 0,
+        "owner": 1,
+        "garrison": 10,
+        "prod_per_sec": 2,
+        "tower": "",
+        "prod_acc": 0
+      },
+      {
+        "id": 2,
+        "x": 4000,
+        "y": 0,
+        "owner": 1,
+        "garrison": 0,
+        "prod_per_sec": 1,
+        "tower": "",
+        "prod_acc": 0
+      },
+      {
+        "id": 3,
+        "x": 8000,
+        "y": 1000,
+        "owner": 0,
+        "garrison": 3,
+        "prod_per_sec": 0,
+        "tower": "",
+        "prod_acc": 0
+      }
+    ],
+    "links": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "seed": 1,
+  "commands": [
+    {
+      "tick": 0,
+      "type": "send",
+      "owner": 1,
+      "from": 1,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 30,
+      "type": "send",
+      "owner": 1,
+      "from": 2,
+      "to": 3,
+      "percent": 100
+    }
+  ],
+  "ticks": 200,
+  "expected_hash": 2831248825
+}
