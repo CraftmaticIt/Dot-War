@@ -6,7 +6,8 @@ extends MultiMeshInstance2D
 const PX_PER_UNIT := 40.0       # 1 sim unit (Fx.ONE) = 40 px
 const MAX_DOTS := 4096
 const DOT_SIZE := 11.0
-const SPREAD_PX := 24.0
+const SPREAD_PX := 28.0
+const DOT_SPACING := 4.0
 const OWNER_COLORS := [
 	Color("#808080"), Color("#00E5FF"), Color("#FF2E88"), Color("#B6FF00"), Color("#FFB300"),
 ]
@@ -18,11 +19,13 @@ var _last_tick := -1
 static func to_px(p: Vector2i) -> Vector2:
 	return Vector2(p.x, p.y) * (PX_PER_UNIT / Fx.ONE)
 
-## Deterministic offset of dot i inside group gid, within SPREAD_PX (sunflower spiral, hashed rotation).
-static func dot_offset(gid: int, i: int) -> Vector2:
-	var h := ((gid * 7919 + i) * 2654435761) & 0xFFFFFFFF
-	var r := minf(SPREAD_PX, 5.0 * sqrt(float(i) + 0.5))
-	var a := float(i) * 2.39996 + float(h % 628) / 100.0
+## Deterministic offset of dot i (of n) inside group gid: sunflower disc whose radius
+## grows with sqrt(n) up to SPREAD_PX, rotated per group so groups do not look identical.
+static func dot_offset(gid: int, i: int, n: int) -> Vector2:
+	var disc := minf(SPREAD_PX, DOT_SPACING * sqrt(float(n)))
+	var r := disc * sqrt((float(i) + 0.5) / float(maxi(n, 1)))
+	var rot := float(((gid * 2654435761) & 0xFFFF) % 628) / 100.0
+	var a := float(i) * 2.39996 + rot
 	return Vector2(cos(a), sin(a)) * r
 
 func _ready() -> void:
@@ -56,7 +59,7 @@ func sync(world: SimWorld, alpha: float) -> void:
 		for i in g.count:
 			if n >= MAX_DOTS:
 				break
-			multimesh.set_instance_transform_2d(n, Transform2D(0.0, center + dot_offset(g.id, i)))
+			multimesh.set_instance_transform_2d(n, Transform2D(0.0, center + dot_offset(g.id, i, g.count)))
 			multimesh.set_instance_color(n, col)
 			n += 1
 	multimesh.visible_instance_count = n

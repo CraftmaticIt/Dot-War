@@ -1,0 +1,27 @@
+name: android
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .tools
+            ~/.local/share/godot/export_templates
+          key: godot-android-${{ hashFiles('scripts/install_godot.sh', 'scripts/export_android.sh') }}
+      - run: ./scripts/install_godot.sh
+      - name: Sim benchmark (headless)
+        run: .tools/godot --headless --path . res://game/benchmark.tscn -- --sim-only
+      - run: ./scripts/export_android.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dot-war-debug-apk
+          path: build/dot-war-debug.apk

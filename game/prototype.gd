@@ -90,6 +90,12 @@ func _build_ui() -> void:
 		b.custom_minimum_size = Vector2(72, 44)
 		b.pressed.connect(func(): percent = p)
 		box.add_child(b)
+	var bench := Button.new()
+	bench.text = "Benchmark"
+	bench.custom_minimum_size = Vector2(120, 44)
+	bench.position = Vector2(1144, 660)
+	bench.pressed.connect(func(): get_tree().change_scene_to_file("res://game/benchmark.tscn"))
+	layer.add_child(bench)
 	_status = Label.new()
 	_status.position = Vector2(16, 12)
 	_status.add_theme_font_size_override("font_size", 22)
