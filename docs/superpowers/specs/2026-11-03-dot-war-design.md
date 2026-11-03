@@ -36,6 +36,12 @@ Decyzje właściciela: hybryda „rój węzłów + obrona-labirynt”, multiplay
 
 Każdy budynek: 5 poziomów w MVP, koszt Energii + czas budowy.
 
+### Decyzje etapu 2 (właściciel, 2026-11-03)
+
+- Układ: heksagonalna siatka; węzeł na dowolnym wolnym polu przyległym do kolonii, krawędzie automatycznie między sąsiadami.
+- Czas budowy: realny czas + przyspieszanie Kryształami.
+- Offline: zasoby rosną po zamknięciu gry, max 8 h, do limitu magazynu.
+
 ## 4. Ekonomia
 
 - **Energia** — z kopalń; budowa/ulepszenia. Łupiona w ataku (max 20% niechronionej).
