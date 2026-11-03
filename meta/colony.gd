@@ -187,3 +187,65 @@ func collect(now: int) -> Dictionary:
 		t0 = t1
 	last_collect = now
 	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
+
+const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem"]
+
+func to_dict() -> Dictionary:
+	var out := {"cells": {}}
+	var keys := cells.keys()
+	keys.sort()
+	for k in keys:
+		out.cells[k] = cells[k].duplicate()
+	for f in _INT_FIELDS:
+		out[f] = get(f)
+	return out
+
+## Builds from a dict (JSON numbers arrive as floats). Unknown building types are dropped.
+## Returns null when the data is not a usable colony (no core).
+static func from_dict(d) -> ColonyState:
+	if typeof(d) != TYPE_DICTIONARY or typeof(d.get("cells")) != TYPE_DICTIONARY:
+		return null
+	var c := ColonyState.new()
+	for k in d.cells:
+		var cell = d.cells[k]
+		if typeof(cell) != TYPE_DICTIONARY or not Buildings.is_type(String(cell.get("type", ""))):
+			continue
+		var p := Hex.parse(String(k))
+		c.cells[Hex.key(p.x, p.y)] = {
+			"type": String(cell.type),
+			"level": clampi(int(cell.get("level", 0)), 0, Buildings.MAX_LEVEL),
+			"build_end": int(cell.get("build_end", 0)),
+			"target_level": clampi(int(cell.get("target_level", 0)), 0, Buildings.MAX_LEVEL),
+		}
+	var has_core := false
+	for k in c.cells:
+		if c.cells[k].type == "core":
+			has_core = true
+	if not has_core:
+		return null
+	for f in _INT_FIELDS:
+		var v = d.get(f, 0)
+		c.set(f, int(v) if typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT else 0)
+	return c
+
+## Defender snapshot for the swarm simulation: one node per built cell (level >= 1),
+## ids 1..n in sorted (q, r) order, links between adjacent built cells.
+func to_sim_graph(owner: int) -> SimGraph:
+	var built: Array[Vector2i] = []
+	for k in cells:
+		if cells[k].level >= 1:
+			built.append(Hex.parse(k))
+	built.sort_custom(func(a, b): return a.x < b.x or (a.x == b.x and a.y < b.y))
+	var ids := {}
+	var g := SimGraph.new()
+	for i in built.size():
+		var h := built[i]
+		var cell: Dictionary = cells[Hex.key(h.x, h.y)]
+		var pos := Hex.to_fx(h.x, h.y)
+		g.add_node(i + 1, pos.x, pos.y, owner, 0, 0, Buildings.tower(cell.type))
+		ids[h] = i + 1
+	for h in built:
+		for nb in Hex.neighbors(h.x, h.y):
+			if ids.has(nb) and ids[h] < ids[nb]:
+				g.link(ids[h], ids[nb])
+	return g
