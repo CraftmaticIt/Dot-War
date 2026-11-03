@@ -69,7 +69,7 @@ Wybrane pod kątem minimum ręcznej konfiguracji:
   - `net/` — klient backendu.
 - **Backend**: **Supabase** (hostowane: Postgres + Auth + Edge Functions + Storage). Uzasadnienie: zero własnego serwera; właściciel zakłada tylko konto i przekazuje token, resztę (migracje, funkcje) wdraża Claude przez Supabase CLI.
   - Tabele: `players`, `colonies` (snapshot JSON + wersja), `attacks` (replay: seed + komendy), `leagues`, `inventory`.
-  - Edge Function `verify_attack`: odtwarza replay tą samą symulacją (port `sim/` do TypeScript lub uruchomienie Godot headless — decyzja w planie) i dopiero wtedy przyznaje łup/trofea. Anti-cheat.
+  - Edge Function `verify_attack`: odtwarza replay portem `sim/` do TypeScript (decyzja właściciela; rozjazd pilnowany wspólnymi wektorami testowymi: te same pliki JSON seed+komendy → ten sam hash w GDScript i TS) i dopiero wtedy przyznaje łup/trofea. Anti-cheat.
   - Logowanie: anonimowe konto urządzenia → opcjonalnie Google/Apple.
 - **Build/CI**: GitHub Actions — testy (GUT), eksport Android APK/AAB; iOS przez Codemagic lub GitHub macOS runner (później).
 - **Monetyzacja/analityka** (etap 7): rewarded ads (AdMob przez plugin Godot), IAP (Google Play Billing / StoreKit plugin), analityka w Supabase (tabela zdarzeń) — bez dodatkowych usług.
