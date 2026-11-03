@@ -46,6 +46,7 @@ func _adjacent_to_colony(q: int, r: int) -> bool:
 	return false
 
 func can_place(type: String, q: int, r: int, now: int) -> String:
+	finish_builds(now)  # due builds count as done (idempotent, no resource change)
 	if not Buildings.is_type(type):
 		return "bad_type"
 	if type == "core":
@@ -74,6 +75,7 @@ func place(type: String, q: int, r: int, now: int) -> String:
 	return ""
 
 func can_upgrade(q: int, r: int, now: int) -> String:
+	finish_builds(now)  # due builds count as done (idempotent, no resource change)
 	var k := Hex.key(q, r)
 	if not cells.has(k):
 		return "empty"
@@ -153,6 +155,7 @@ func _rates() -> Vector2i:
 ## the window switch rates at their exact second. Clock going backwards accrues nothing.
 func collect(now: int) -> Dictionary:
 	if now <= last_collect:
+		finish_builds(now)  # clock behind: no production, but due builds still complete
 		return {"energy": 0, "dots": 0, "secs": 0}
 	var start := maxi(last_collect, now - OFFLINE_CAP_SECS)
 	finish_builds(start)
@@ -188,10 +191,11 @@ func collect(now: int) -> Dictionary:
 	last_collect = now
 	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
 
+const SAVE_VERSION := 1
 const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem"]
 
 func to_dict() -> Dictionary:
-	var out := {"cells": {}}
+	var out := {"version": SAVE_VERSION, "cells": {}}
 	var keys := cells.keys()
 	keys.sort()
 	for k in keys:
@@ -205,6 +209,9 @@ func to_dict() -> Dictionary:
 static func from_dict(d) -> ColonyState:
 	if typeof(d) != TYPE_DICTIONARY or typeof(d.get("cells")) != TYPE_DICTIONARY:
 		return null
+	var ver = d.get("version", 1)
+	if (typeof(ver) != TYPE_INT and typeof(ver) != TYPE_FLOAT) or int(ver) > SAVE_VERSION:
+		return null  # unknown/future format: never guess
 	var c := ColonyState.new()
 	for k in d.cells:
 		var cell = d.cells[k]

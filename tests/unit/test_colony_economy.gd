@@ -82,3 +82,20 @@ func test_stock_above_cap_is_kept():
 	c.energy = 5000
 	c.collect(T0 + H)
 	assert_eq(c.energy, 5000)
+
+func test_clock_behind_still_finishes_builds():
+	var c := _c()
+	c.collect(T0 + H)
+	assert_eq(c.place("wall", 0, 1, T0 + 100), "")
+	c.collect(T0 + 200)
+	assert_eq(c.cells["0,1"].level, 1)
+	assert_eq(c.cells["0,1"].build_end, 0)
+	assert_eq(c.last_collect, T0 + H, "last_collect never moves back")
+
+func test_can_upgrade_right_after_build_end():
+	var c := _c()
+	c.energy = 100000
+	assert_eq(c.upgrade(0, 0, T0), "")
+	# No collect in between: the build is over at T0+300, so it must not report busy.
+	assert_eq(c.can_upgrade(0, 0, T0 + 300), "")
+	assert_eq(c.cells["0,0"].level, 2)

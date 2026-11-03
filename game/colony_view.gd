@@ -10,7 +10,8 @@ const NAMES := {"core": "Rdzeń", "mine": "Kopalnia", "storage": "Magazyn", "gen
 const LETTERS := {"core": "C", "mine": "M", "storage": "S", "generator": "G",
 	"laser": "L", "pulse": "P", "wall": "W", "trap": "T"}
 
-var colony: ColonyState
+var colony: ColonyState        # may be injected before _ready (tests)
+var save_enabled := true
 var origin := Vector2(640, 380)
 var selected := Vector2i(999, 999)
 var _hud: Label
@@ -21,6 +22,9 @@ var _tick := 0.0
 var _shot := ""
 var _shot_left := 2.0
 var _font: Font
+var _timer_label: Label = null
+var _dyn_buttons: Array = []    # [Button, Callable -> [text, err]] refreshed every second
+var _sig := ""
 
 # --- pure helpers (unit-tested) ---
 
@@ -94,8 +98,11 @@ func _ready() -> void:
 		colony.place("generator", 0, 1, _now())
 		colony.place("laser", -1, 0, _now())
 		selected = Vector2i(0, 1)
-	else:
-		colony = SaveStore.load_or_default(_now())
+	elif colony == null:
+		var res := SaveStore.load_result(_now())
+		colony = res.colony
+		if res.reset:
+			_show_toast("Zapis był uszkodzony – kopia zachowana, start od nowa")
 		var got := colony.collect(_now())
 		if got.energy > 0 or got.dots > 0:
 			_show_toast("Zebrano +%d energii, +%d kropek" % [got.energy, got.dots])
@@ -136,8 +143,9 @@ func _show_toast(msg: String) -> void:
 	_toast_left = 4.0
 
 func _save() -> void:
-	if _shot == "":
-		SaveStore.save(colony)
+	if _shot == "" and save_enabled:
+		if SaveStore.save(colony) != OK:
+			_show_toast("Nie udało się zapisać gry")
 
 func _notification(what: int) -> void:
 	if colony == null:
@@ -154,10 +162,7 @@ func _process(delta: float) -> void:
 	_tick += delta
 	if _tick >= 1.0:
 		_tick = 0.0
-		var before := colony.to_dict()
-		colony.collect(_now())
-		if colony.to_dict() != before:
-			_refresh()
+		on_second()
 	if _toast_left > 0.0:
 		_toast_left -= delta
 		if _toast_left <= 0.0:
@@ -177,22 +182,65 @@ func _unhandled_input(e: InputEvent) -> void:
 	if not tap:
 		return
 	var h := cell_at(e.position, origin)
-	if Hex.distance(h, Vector2i.ZERO) > GRID_RADIUS:
-		selected = Vector2i(999, 999)
-	else:
-		selected = h
+	select(h if Hex.distance(h, Vector2i.ZERO) <= GRID_RADIUS else Vector2i(999, 999))
+
+# --- refresh model: the panel is rebuilt only when the structure changes (selection,
+# player action, build finished). The 1 s tick only updates texts, so buttons are never
+# freed between finger-down and finger-up.
+
+func select(h: Vector2i) -> void:
+	selected = h
 	_refresh()
+
+func panel_nodes() -> Array:
+	return _panel.get_children()
+
+func timer_label() -> Label:
+	return _timer_label
+
+func on_second() -> void:
+	var now := _now()
+	colony.collect(now)
+	if _structure_sig(now) != _sig:
+		_refresh()
+	else:
+		_update_dynamic(now)
+
+func _structure_sig(now: int) -> String:
+	var parts := PackedStringArray([Hex.key(selected.x, selected.y)])
+	var keys := colony.cells.keys()
+	keys.sort()
+	for k in keys:
+		var c: Dictionary = colony.cells[k]
+		parts.append("%s:%s:%d:%d:%s" % [k, c.type, c.level, c.target_level, str(c.build_end > now)])
+	return "|".join(parts)
 
 func _refresh() -> void:
 	var now := _now()
+	_sig = _structure_sig(now)
+	_rebuild_panel(now)
+	_update_dynamic(now)
+
+func _update_dynamic(now: int) -> void:
 	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d" % [
 		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
 		colony.busy_builders(now), ColonyState.BUILDERS]
-	_rebuild_panel(now)
+	var k := Hex.key(selected.x, selected.y)
+	if _timer_label != null and colony.cells.has(k):
+		var cell: Dictionary = colony.cells[k]
+		_timer_label.text = "Budowa → poz. %d: %s" % [cell.target_level, format_secs(maxi(0, cell.build_end - now))]
+	for pair in _dyn_buttons:
+		var b: Button = pair[0]
+		var st: Array = pair[1].call(now)
+		b.text = st[0] if st[1] == "" else "%s  (%s)" % [st[0], st[1]]
+		b.disabled = st[1] != ""
 	queue_redraw()
 
 func _rebuild_panel(now: int) -> void:
+	_timer_label = null
+	_dyn_buttons.clear()
 	for c in _panel.get_children():
+		_panel.remove_child(c)
 		c.queue_free()
 	if Hex.distance(selected, Vector2i.ZERO) > GRID_RADIUS:
 		return
@@ -210,14 +258,14 @@ func _label(text: String, size := 18, color := Color.WHITE) -> Label:
 	_panel.add_child(l)
 	return l
 
-func _button(text: String, err: String, cb: Callable) -> void:
+## state: Callable(now) -> [text, err]; re-evaluated every second without rebuilding.
+func _button(state: Callable, cb: Callable) -> void:
 	var b := Button.new()
-	b.text = text if err == "" else "%s  (%s)" % [text, err]
-	b.disabled = err != ""
 	b.custom_minimum_size = Vector2(300, 44)
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.pressed.connect(cb)
 	_panel.add_child(b)
+	_dyn_buttons.append([b, state])
 
 func _panel_building(cell: Dictionary, now: int) -> void:
 	var q := selected.x
@@ -226,14 +274,17 @@ func _panel_building(cell: Dictionary, now: int) -> void:
 	if cell.level > 0:
 		_label(describe(cell.type, cell.level))
 	if cell.build_end > now:
-		_label("Budowa → poz. %d: %s" % [cell.target_level, format_secs(cell.build_end - now)])
-		var cost := colony.speedup_cost(q, r, now)
-		_button("Przyspiesz (%d %s)" % [cost, crystals_word(cost)], "" if colony.crystals >= cost else "brak kryształów",
+		_timer_label = _label("")
+		_button(func(t: int):
+			var cost := colony.speedup_cost(q, r, t)
+			return ["Przyspiesz (%d %s)" % [cost, crystals_word(cost)], "" if colony.crystals >= cost else "brak kryształów"],
 			func(): _act(colony.speedup(q, r, _now())))
 	elif cell.level < Buildings.MAX_LEVEL:
 		var nl: int = cell.level + 1
-		_button("Ulepsz → %d: %d energii, %s" % [nl, Buildings.cost(cell.type, nl), format_secs(Buildings.build_secs(cell.type, nl))],
-			_err_text(colony.can_upgrade(q, r, now)), func(): _act(colony.upgrade(q, r, _now())))
+		_button(func(t: int):
+			return ["Ulepsz → %d: %d energii, %s" % [nl, Buildings.cost(cell.type, nl), format_secs(Buildings.build_secs(cell.type, nl))],
+				_err_text(colony.can_upgrade(q, r, t))],
+			func(): _act(colony.upgrade(q, r, _now())))
 
 func _panel_build_menu(now: int) -> void:
 	var q := selected.x
@@ -247,8 +298,10 @@ func _panel_build_menu(now: int) -> void:
 		if t == "core":
 			continue
 		var type: String = t
-		_button("%s: %d energii, %s" % [NAMES[type], Buildings.cost(type, 1), format_secs(Buildings.build_secs(type, 1))],
-			_err_text(colony.can_place(type, q, r, now)), func(): _act(colony.place(type, q, r, _now())))
+		_button(func(t: int):
+			return ["%s: %d energii, %s" % [NAMES[type], Buildings.cost(type, 1), format_secs(Buildings.build_secs(type, 1))],
+				_err_text(colony.can_place(type, q, r, t))],
+			func(): _act(colony.place(type, q, r, _now())))
 
 static func _err_text(code: String) -> String:
 	return {"": "", "no_energy": "brak energii", "no_builder": "brak budowniczych",
