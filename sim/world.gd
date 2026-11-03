@@ -12,14 +12,29 @@ var groups: Array[Dictionary] = []
 var events: Array[Dictionary] = []
 
 var _queue: Array[Dictionary] = []
+var _bad: Array[Dictionary] = []   # malformed commands, reported on the next step
 var _next_group_id := 0
+
+const NUM_KEYS := ["tick", "owner", "from", "to", "percent"]
 
 func _init(p_graph: SimGraph, seed: int) -> void:
 	graph = p_graph
 	rng = SimRng.new(seed)
 
+## Commands are untrusted (replays come from clients). Malformed ones are rejected,
+## never crash: every numeric key must exist and be a number (JSON gives floats).
 func queue(cmd: Dictionary) -> void:
-	_queue.append(cmd)
+	if String(cmd.get("type", "")) != "send":
+		_bad.append(cmd)
+		return
+	var clean := {"type": "send"}
+	for k in NUM_KEYS:
+		var v = cmd.get(k)
+		if typeof(v) != TYPE_INT and typeof(v) != TYPE_FLOAT:
+			_bad.append(cmd)
+			return
+		clean[k] = int(v)
+	_queue.append(clean)
 
 func step() -> void:
 	events.clear()
@@ -30,6 +45,9 @@ func step() -> void:
 	tick += 1
 
 func _apply_commands() -> void:
+	for cmd in _bad:
+		_reject(cmd, "bad_cmd")
+	_bad.clear()
 	var keep: Array[Dictionary] = []
 	for cmd in _queue:
 		var t := int(cmd.tick)
@@ -53,6 +71,8 @@ func _apply_send(cmd: Dictionary) -> void:
 	var to := int(cmd.to)
 	var owner := int(cmd.owner)
 	var pct := int(cmd.percent)
+	if owner <= 0:
+		return _reject(cmd, "bad_owner")
 	if not graph.has_node(from) or not graph.has_node(to) or from == to:
 		return _reject(cmd, "bad_node")
 	var n := graph.node(from)

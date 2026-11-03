@@ -119,3 +119,29 @@ func test_hash_differs_on_different_cmd():
 func test_hash_is_u32():
 	var h := _run([])
 	assert_true(h >= 0 and h <= 0xFFFFFFFF)
+
+func test_malformed_cmd_missing_field_rejected():
+	var w := _line_world(10)
+	w.queue({"tick": 0, "type": "send", "owner": 1, "to": 2, "percent": 50})
+	w.step()
+	assert_eq(w.groups.size(), 0)
+	assert_true(_has_event(w, "cmd_rejected"))
+
+func test_malformed_cmd_non_numeric_rejected():
+	var w := _line_world(10)
+	w.queue({"tick": 0, "type": "send", "owner": 1, "from": "x", "to": 2, "percent": 50})
+	w.queue({"type": "send"})
+	w.step()
+	assert_eq(w.groups.size(), 0)
+	var n := 0
+	for e in w.events:
+		if e.type == "cmd_rejected":
+			n += 1
+	assert_eq(n, 2)
+
+func test_owner_zero_rejected():
+	var w := _line_world(10)
+	_send(w, 2, 1, 50, 0)  # node 2 is neutral (owner 0)
+	w.step()
+	assert_eq(w.groups.size(), 0)
+	assert_true(_has_event(w, "cmd_rejected"))

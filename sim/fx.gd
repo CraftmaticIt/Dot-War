@@ -1,5 +1,9 @@
 class_name Fx
 ## Fixed-point integer math for the deterministic simulation. Scale: ONE = 1000.
+##
+## TS-port contract (pinned by tests/vectors): ints are 64-bit; `/` truncates toward
+## zero (JS: Math.trunc(a / b), NOT Math.floor); `%` takes the dividend's sign (JS `%`
+## matches). Hash/RNG are 32-bit: use Math.imul(...) >>> 0 and >>> 0 after shifts.
 
 const ONE := 1000
 

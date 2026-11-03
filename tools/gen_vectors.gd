@@ -44,4 +44,16 @@ func _init() -> void:
 	_write("v003_towers", g, 42, [
 		_cmd(0, 1, 1, 2, 5), _cmd(5, 1, 1, 4, 50), _cmd(10, 1, 1, 3, 50), _cmd(80, 1, 1, 4, 100),
 		_cmd(90, 2, 4, 1, 60)], 500)
+	# v004: attackers move in -x / -y; laser at (13402, 9001) sits where truncating vs floor
+	# division disagree on "in range" (tick 110). Ends mid-flight so dmg_acc is in the hash.
+	# Pins the TS contract: Math.trunc, not Math.floor.
+	g = SimGraph.new()
+	g.add_node(1, 30000, 21000, 1, 80, 3)
+	g.add_node(2, 29000, 2000, 1, 60, 3)
+	g.add_node(3, 1000, 1000, 2, 40, 1)
+	g.add_node(4, 1000, 19000, 2, 40, 1)
+	g.add_node(5, 13402, 9001, 2, 10, 1, "laser")
+	g.add_node(6, 17003, 11999, 2, 10, 1, "pulse")
+	g.link(1, 3); g.link(2, 4); g.link(1, 2)
+	_write("v004_negative_dirs", g, 99, [_cmd(0, 1, 1, 3, 50), _cmd(40, 1, 1, 3, 30), _cmd(112, 1, 2, 4, 25)], 150)
 	quit()
