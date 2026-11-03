@@ -1,0 +1,316 @@
+extends Node2D
+## Colony screen: hex grid, build menu, building panel, resource HUD.
+## User args `-- --shot <png>`: fresh colony, auto-builds two buildings, screenshot, quit.
+
+const HEX_PX := 44.0          # hex radius on screen
+const GRID_RADIUS := 4
+const PLAYER := Color("#00E5FF")
+const NAMES := {"core": "Rdzeń", "mine": "Kopalnia", "storage": "Magazyn", "generator": "Generator",
+	"laser": "Laser", "pulse": "Puls", "wall": "Ściana", "trap": "Pułapka"}
+const LETTERS := {"core": "C", "mine": "M", "storage": "S", "generator": "G",
+	"laser": "L", "pulse": "P", "wall": "W", "trap": "T"}
+
+var colony: ColonyState
+var origin := Vector2(640, 380)
+var selected := Vector2i(999, 999)
+var _hud: Label
+var _panel: VBoxContainer
+var _toast: Label
+var _toast_left := 0.0
+var _tick := 0.0
+var _shot := ""
+var _shot_left := 2.0
+var _font: Font
+
+# --- pure helpers (unit-tested) ---
+
+static func hex_to_px(q: int, r: int, o: Vector2) -> Vector2:
+	var f := Hex.to_fx(q, r)
+	return o + Vector2(f.x, f.y) * (HEX_PX / Hex.SIZE)
+
+## Pixel -> axial hex (cube rounding).
+static func cell_at(px: Vector2, o: Vector2) -> Vector2i:
+	var p := (px - o) / HEX_PX
+	var qf := (sqrt(3.0) / 3.0) * p.x - p.y / 3.0
+	var rf := (2.0 / 3.0) * p.y
+	var sf := -qf - rf
+	var q := roundi(qf)
+	var r := roundi(rf)
+	var s := roundi(sf)
+	var dq := absf(q - qf)
+	var dr := absf(r - rf)
+	var ds := absf(s - sf)
+	if dq > dr and dq > ds:
+		q = -r - s
+	elif dr > ds:
+		r = -q - s
+	return Vector2i(q, r)
+
+static func format_secs(s: int) -> String:
+	if s < 60:
+		return "%ds" % s
+	if s < 3600:
+		return "%dm %02ds" % [s / 60, s % 60]
+	return "%dh %02dm" % [s / 3600, (s % 3600) / 60]
+
+## Polish plural: 1 kryształ, 2-4 kryształy, 5+ kryształów (12-14 -> kryształów).
+static func crystals_word(n: int) -> String:
+	if n == 1:
+		return "kryształ"
+	if n % 10 >= 2 and n % 10 <= 4 and (n % 100 < 12 or n % 100 > 14):
+		return "kryształy"
+	return "kryształów"
+
+static func describe(type: String, level: int) -> String:
+	match type:
+		"mine":
+			return "+%d energii/h" % Buildings.energy_per_hour(type, level)
+		"generator":
+			return "+%d kropek/h, limit %d" % [Buildings.dots_per_hour(type, level), Buildings.dots_cap(type, level)]
+		"storage", "core":
+			return "magazyn +%d" % Buildings.energy_cap(type, level)
+		"laser":
+			return "wieża: pojedynczy cel, duży zasięg"
+		"pulse":
+			return "wieża: obszarowa, krótki zasięg"
+		"wall":
+			return "spowalnia i kieruje rój"
+		"trap":
+			return "ukryta mina, jednorazowa"
+	return ""
+
+# --- scene ---
+
+func _now() -> int:
+	return int(Time.get_unix_time_from_system())
+
+func _ready() -> void:
+	_font = ThemeDB.fallback_font
+	var args := OS.get_cmdline_user_args()
+	var i := args.find("--shot")
+	if i != -1 and i + 1 < args.size():
+		_shot = args[i + 1]
+		colony = ColonyState.new_default(_now())
+		colony.place("generator", 0, 1, _now())
+		colony.place("laser", -1, 0, _now())
+		selected = Vector2i(0, 1)
+	else:
+		colony = SaveStore.load_or_default(_now())
+		var got := colony.collect(_now())
+		if got.energy > 0 or got.dots > 0:
+			_show_toast("Zebrano +%d energii, +%d kropek" % [got.energy, got.dots])
+		_save()
+	_build_ui()
+	_refresh()
+
+func _build_ui() -> void:
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	_hud = Label.new()
+	_hud.position = Vector2(16, 12)
+	_hud.add_theme_font_size_override("font_size", 22)
+	layer.add_child(_hud)
+	var battle := Button.new()
+	battle.text = "Bitwa"
+	battle.custom_minimum_size = Vector2(120, 48)
+	battle.position = Vector2(1144, 12)
+	battle.pressed.connect(func():
+		_save()
+		get_tree().change_scene_to_file("res://game/prototype.tscn"))
+	layer.add_child(battle)
+	_panel = VBoxContainer.new()
+	_panel.position = Vector2(16, 70)
+	_panel.custom_minimum_size = Vector2(300, 0)
+	layer.add_child(_panel)
+	_toast = Label.new()
+	_toast.position = Vector2(440, 660)
+	_toast.add_theme_font_size_override("font_size", 22)
+	_toast.add_theme_color_override("font_color", Color("#B6FF00"))
+	layer.add_child(_toast)
+
+func _show_toast(msg: String) -> void:
+	if _toast:
+		_toast.text = msg
+	else:
+		call_deferred("_show_toast", msg)
+	_toast_left = 4.0
+
+func _save() -> void:
+	if _shot == "":
+		SaveStore.save(colony)
+
+func _notification(what: int) -> void:
+	if colony == null:
+		return
+	if what == NOTIFICATION_APPLICATION_RESUMED:
+		var got := colony.collect(_now())
+		if got.energy > 0 or got.dots > 0:
+			_show_toast("Zebrano +%d energii, +%d kropek" % [got.energy, got.dots])
+		_refresh()
+	elif what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_save()
+
+func _process(delta: float) -> void:
+	_tick += delta
+	if _tick >= 1.0:
+		_tick = 0.0
+		var before := colony.to_dict()
+		colony.collect(_now())
+		if colony.to_dict() != before:
+			_refresh()
+	if _toast_left > 0.0:
+		_toast_left -= delta
+		if _toast_left <= 0.0:
+			_toast.text = ""
+	if _shot != "":
+		_shot_left -= delta
+		if _shot_left <= 0.0:
+			var path := _shot
+			_shot = ""
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(path)
+			get_tree().quit()
+
+func _unhandled_input(e: InputEvent) -> void:
+	var tap: bool = (e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed) \
+		or (e is InputEventScreenTouch and e.pressed)
+	if not tap:
+		return
+	var h := cell_at(e.position, origin)
+	if Hex.distance(h, Vector2i.ZERO) > GRID_RADIUS:
+		selected = Vector2i(999, 999)
+	else:
+		selected = h
+	_refresh()
+
+func _refresh() -> void:
+	var now := _now()
+	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d" % [
+		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
+		colony.busy_builders(now), ColonyState.BUILDERS]
+	_rebuild_panel(now)
+	queue_redraw()
+
+func _rebuild_panel(now: int) -> void:
+	for c in _panel.get_children():
+		c.queue_free()
+	if Hex.distance(selected, Vector2i.ZERO) > GRID_RADIUS:
+		return
+	var k := Hex.key(selected.x, selected.y)
+	if colony.cells.has(k):
+		_panel_building(colony.cells[k], now)
+	else:
+		_panel_build_menu(now)
+
+func _label(text: String, size := 18, color := Color.WHITE) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", color)
+	_panel.add_child(l)
+	return l
+
+func _button(text: String, err: String, cb: Callable) -> void:
+	var b := Button.new()
+	b.text = text if err == "" else "%s  (%s)" % [text, err]
+	b.disabled = err != ""
+	b.custom_minimum_size = Vector2(300, 44)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.pressed.connect(cb)
+	_panel.add_child(b)
+
+func _panel_building(cell: Dictionary, now: int) -> void:
+	var q := selected.x
+	var r := selected.y
+	_label("%s  poz. %d" % [NAMES[cell.type], cell.level], 22, PLAYER)
+	if cell.level > 0:
+		_label(describe(cell.type, cell.level))
+	if cell.build_end > now:
+		_label("Budowa → poz. %d: %s" % [cell.target_level, format_secs(cell.build_end - now)])
+		var cost := colony.speedup_cost(q, r, now)
+		_button("Przyspiesz (%d %s)" % [cost, crystals_word(cost)], "" if colony.crystals >= cost else "brak kryształów",
+			func(): _act(colony.speedup(q, r, _now())))
+	elif cell.level < Buildings.MAX_LEVEL:
+		var nl: int = cell.level + 1
+		_button("Ulepsz → %d: %d energii, %s" % [nl, Buildings.cost(cell.type, nl), format_secs(Buildings.build_secs(cell.type, nl))],
+			_err_text(colony.can_upgrade(q, r, now)), func(): _act(colony.upgrade(q, r, _now())))
+
+func _panel_build_menu(now: int) -> void:
+	var q := selected.x
+	var r := selected.y
+	var first := colony.can_place("wall", q, r, now)
+	if first == "not_adjacent":
+		_label("Buduj tylko obok kolonii", 18, Color(1, 1, 1, 0.6))
+		return
+	_label("Buduj", 22, PLAYER)
+	for t in Buildings.TYPES:
+		if t == "core":
+			continue
+		var type: String = t
+		_button("%s: %d energii, %s" % [NAMES[type], Buildings.cost(type, 1), format_secs(Buildings.build_secs(type, 1))],
+			_err_text(colony.can_place(type, q, r, now)), func(): _act(colony.place(type, q, r, _now())))
+
+static func _err_text(code: String) -> String:
+	return {"": "", "no_energy": "brak energii", "no_builder": "brak budowniczych",
+		"node_limit": "limit węzłów", "core_limit": "ulepsz Rdzeń", "max_level": "maks. poziom",
+		"busy": "w budowie", "occupied": "zajęte", "not_adjacent": "za daleko"}.get(code, code)
+
+func _act(err: String) -> void:
+	if err != "":
+		_show_toast(_err_text(err))
+	_save()
+	_refresh()
+
+func _draw() -> void:
+	var now := _now()
+	# links between neighbouring buildings, under the cells
+	for k in colony.cells:
+		var a := Hex.parse(k)
+		for nb in Hex.neighbors(a.x, a.y):
+			var nk := Hex.key(nb.x, nb.y)
+			if colony.cells.has(nk) and k < nk:
+				draw_line(hex_to_px(a.x, a.y, origin), hex_to_px(nb.x, nb.y, origin), Color(PLAYER, 0.25), 2.0, true)
+	for q in range(-GRID_RADIUS, GRID_RADIUS + 1):
+		for r in range(-GRID_RADIUS, GRID_RADIUS + 1):
+			var h := Vector2i(q, r)
+			if Hex.distance(h, Vector2i.ZERO) > GRID_RADIUS:
+				continue
+			_draw_cell(h, now)
+
+func _hex_points(c: Vector2, rad: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in 7:
+		var ang := deg_to_rad(60.0 * i - 30.0)
+		pts.append(c + Vector2(cos(ang), sin(ang)) * rad)
+	return pts
+
+func _draw_cell(h: Vector2i, now: int) -> void:
+	var c := hex_to_px(h.x, h.y, origin)
+	var k := Hex.key(h.x, h.y)
+	var pts := _hex_points(c, HEX_PX - 3)
+	var is_sel := h == selected
+	if colony.cells.has(k):
+		var cell: Dictionary = colony.cells[k]
+		var building: bool = cell.build_end > now
+		draw_colored_polygon(pts, Color(PLAYER, 0.10 if building else 0.18))
+		if building:
+			for i in 6:
+				draw_line(pts[i], pts[i].lerp(pts[i + 1], 0.5), PLAYER, 2.0, true)
+		else:
+			draw_polyline(pts, PLAYER, 3.0 if is_sel else 2.0, true)
+		_text(c + Vector2(0, -2), LETTERS[cell.type], 24, Color.WHITE)
+		var sub := format_secs(cell.build_end - now) if building else "%d" % cell.level
+		_text(c + Vector2(0, 20), sub, 14, Color(1, 1, 1, 0.75))
+	else:
+		var adjacent := false
+		for nb in Hex.neighbors(h.x, h.y):
+			if colony.cells.has(Hex.key(nb.x, nb.y)):
+				adjacent = true
+		var col := Color(PLAYER, 0.35) if adjacent else Color(0.5, 0.6, 0.8, 0.10)
+		draw_polyline(pts, Color.WHITE if is_sel else col, 2.0 if is_sel else 1.0, true)
+		if adjacent:
+			_text(c + Vector2(0, 6), "+", 20, col)
+
+func _text(center: Vector2, s: String, size: int, col: Color) -> void:
+	var w := _font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	draw_string(_font, center - Vector2(w / 2, 0), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)

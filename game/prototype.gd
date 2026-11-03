@@ -96,6 +96,12 @@ func _build_ui() -> void:
 	bench.position = Vector2(1144, 660)
 	bench.pressed.connect(func(): get_tree().change_scene_to_file("res://game/benchmark.tscn"))
 	layer.add_child(bench)
+	var home := Button.new()
+	home.text = "Kolonia"
+	home.custom_minimum_size = Vector2(120, 44)
+	home.position = Vector2(1144, 12)
+	home.pressed.connect(func(): get_tree().change_scene_to_file("res://game/colony_view.tscn"))
+	layer.add_child(home)
 	_status = Label.new()
 	_status.position = Vector2(16, 12)
 	_status.add_theme_font_size_override("font_size", 22)

@@ -21,5 +21,6 @@ GitHub Actions → workflow **android** → artifact `dot-war-debug-apk`. Instal
 
 - `sim/` deterministic simulation (ints only, 20 Hz): `SimGraph`, `SimWorld`, `SimTowers`, `SimReplay`
 - `ai/` bots
-- `game/` rendering (MultiMesh neon dots), input, scenes
+- `meta/` colony + economy (hex grid, buildings, timers, offline accrual, save, snapshot → `SimGraph`)
+- `game/` rendering (MultiMesh neon dots), colony screen (main scene), battle prototype
 - `tests/vectors/` determinism vectors — the contract for the TypeScript server verifier
