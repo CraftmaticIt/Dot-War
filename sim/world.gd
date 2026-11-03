@@ -134,7 +134,7 @@ func group_pos(g: Dictionary) -> Vector2i:
 	return Vector2i(a.x + (b.x - a.x) * g.progress / seg_len, a.y + (b.y - a.y) * g.progress / seg_len)
 
 func _towers() -> void:
-	pass  # Task 6
+	SimTowers.apply(self)
 
 ## Canonical, portable state string (same format must be produced by the TS verifier).
 func canonical() -> String:
