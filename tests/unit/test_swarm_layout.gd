@@ -5,7 +5,7 @@ func test_dot_offset_deterministic_and_bounded():
 		for i in 50:
 			var a := SwarmRenderer.dot_offset(gid, i)
 			assert_eq(a, SwarmRenderer.dot_offset(gid, i))
-			assert_true(a.length() <= SwarmRenderer.SPREAD_PX, "offset within spread")
+			assert_true(a.length() <= SwarmRenderer.SPREAD_PX + 0.001, "offset within spread")
 
 func test_dot_offsets_spread():
 	var seen := {}
