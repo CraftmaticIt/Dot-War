@@ -129,6 +129,61 @@ func finish_builds(now: int) -> void:
 			c.level = c.target_level
 			c.build_end = 0
 
-## Accrue production up to `now`. Filled in by Task 4.
+func energy_cap() -> int:
+	var cap := 0
+	for k in cells:
+		cap += Buildings.energy_cap(cells[k].type, cells[k].level)
+	return cap
+
+func dots_cap() -> int:
+	var cap := 0
+	for k in cells:
+		cap += Buildings.dots_cap(cells[k].type, cells[k].level)
+	return cap
+
+func _rates() -> Vector2i:
+	var e := 0
+	var d := 0
+	for k in cells:
+		e += Buildings.energy_per_hour(cells[k].type, cells[k].level)
+		d += Buildings.dots_per_hour(cells[k].type, cells[k].level)
+	return Vector2i(e, d)
+
+## Accrue production up to `now` (offline window capped at 8 h). Builds that finish inside
+## the window switch rates at their exact second. Clock going backwards accrues nothing.
 func collect(now: int) -> Dictionary:
-	return {"energy": 0, "dots": 0, "secs": 0}
+	if now <= last_collect:
+		return {"energy": 0, "dots": 0, "secs": 0}
+	var start := maxi(last_collect, now - OFFLINE_CAP_SECS)
+	finish_builds(start)
+	var points: Array[int] = []
+	for k in cells:
+		var be: int = cells[k].build_end
+		if be > start and be < now and not points.has(be):
+			points.append(be)
+	points.sort()
+	points.append(now)
+	var e0 := energy
+	var d0 := dots
+	var t0 := start
+	for t1 in points:
+		var rate := _rates()
+		energy_rem += rate.x * (t1 - t0)
+		energy += energy_rem / 3600
+		energy_rem %= 3600
+		dots_rem += rate.y * (t1 - t0)
+		dots += dots_rem / 3600
+		dots_rem %= 3600
+		# Full storage: production is lost. Stock already above cap (e.g. loot) is kept.
+		var ecap := energy_cap()
+		if energy >= ecap:
+			energy = maxi(ecap, e0)
+			energy_rem = 0
+		var dcap := dots_cap()
+		if dots >= dcap:
+			dots = maxi(dcap, d0)
+			dots_rem = 0
+		finish_builds(t1)
+		t0 = t1
+	last_collect = now
+	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
