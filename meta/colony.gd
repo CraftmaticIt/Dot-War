@@ -235,24 +235,37 @@ static func from_dict(d) -> ColonyState:
 		c.set(f, int(v) if typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT else 0)
 	return c
 
-## Defender snapshot for the swarm simulation: one node per built cell (level >= 1),
-## ids 1..n in sorted (q, r) order, links between adjacent built cells.
-func to_sim_graph(owner: int) -> SimGraph:
+## node id -> hex, ids 1..n over built cells (level >= 1) in sorted (q, r) order.
+## Same ids as to_sim_graph(); the battle UI uses it to map nodes back to hexes.
+func snapshot_ids() -> Dictionary:
 	var built: Array[Vector2i] = []
 	for k in cells:
 		if cells[k].level >= 1:
 			built.append(Hex.parse(k))
 	built.sort_custom(func(a, b): return a.x < b.x or (a.x == b.x and a.y < b.y))
-	var ids := {}
-	var g := SimGraph.new()
+	var out := {}
 	for i in built.size():
-		var h := built[i]
+		out[i + 1] = built[i]
+	return out
+
+## Defender snapshot for the swarm simulation: one node per built cell with battle stats
+## (garrison, production, trap, tower level), links between adjacent built cells.
+func to_sim_graph(owner: int) -> SimGraph:
+	var ids := snapshot_ids()
+	var by_hex := {}
+	var g := SimGraph.new()
+	for id in ids:
+		var h: Vector2i = ids[id]
 		var cell: Dictionary = cells[Hex.key(h.x, h.y)]
 		var pos := Hex.to_fx(h.x, h.y)
-		g.add_node(i + 1, pos.x, pos.y, owner, 0, 0, Buildings.tower(cell.type))
-		ids[h] = i + 1
-	for h in built:
+		var t: String = cell.type
+		var lvl: int = cell.level
+		g.add_node(id, pos.x, pos.y, owner, Buildings.garrison(t, lvl), Buildings.battle_prod(t, lvl),
+			Buildings.tower(t), Buildings.trap_dmg(t, lvl), lvl if Buildings.tower(t) != "" else 1)
+		by_hex[h] = id
+	for id in ids:
+		var h: Vector2i = ids[id]
 		for nb in Hex.neighbors(h.x, h.y):
-			if ids.has(nb) and ids[h] < ids[nb]:
-				g.link(ids[h], ids[nb])
+			if by_hex.has(nb) and id < by_hex[nb]:
+				g.link(id, by_hex[nb])
 	return g

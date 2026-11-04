@@ -52,3 +52,24 @@ static func max_nodes(core_level: int) -> int:
 
 static func tower(type: String) -> String:
 	return type if type == "laser" or type == "pulse" else ""
+
+## Battle: defender garrison (fixed, costs the defender nothing).
+static func garrison(type: String, level: int) -> int:
+	if level < 1 or not TABLE.has(type):
+		return 0
+	match type:
+		"core":
+			return 30 * level
+		"wall":
+			return 25 * level
+		"trap":
+			return 0
+	return 6 * level
+
+## Battle: dots per second produced by the node during an attack.
+static func battle_prod(type: String, level: int) -> int:
+	return level if (type == "core" or type == "generator") and level >= 1 else 0
+
+## Battle: dots killed by a trap on the first enemy arrival.
+static func trap_dmg(type: String, level: int) -> int:
+	return 10 * level if type == "trap" and level >= 1 else 0
