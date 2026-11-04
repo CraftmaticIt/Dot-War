@@ -119,3 +119,27 @@ func test_adopt_only_when_unchanged_meanwhile():
 	assert_null(CV.after_sync(before.to_dict(), built, server, true), "local action during sync -> keep local, resync")
 	assert_eq(CV.after_sync(before.to_dict(), built, server, true, false).trophies, 9, "rejected -> always the server copy")
 	assert_null(CV.after_sync(before.to_dict(), before, server, false), "offline -> nothing to adopt")
+
+func test_finish_pve_updates_profile_and_passes_errors():
+	var t := FakeTransport.new()
+	t.responses = [_signup(), _ok({"stars": 3, "gained": 3, "crystals": 15, "profile": {"crystals": 65, "pve": {"1": 3}}}),
+		_ok({"error": "bad_placement"}, 400)]
+	var b := _backend(t)
+	var r := await b.finish_pve({"level": 1, "placement": [{"slot": 2, "type": "laser"}]})
+	assert_eq(int(r.stars), 3)
+	assert_eq(int(b.profile.pve["1"]), 3)
+	assert_string_contains(t.calls[1].url, "/functions/v1/finish_pve")
+	assert_string_contains(t.calls[1].body, "\"placement\"")
+	assert_eq((await b.finish_pve({"level": 1, "placement": []})).error, "bad_placement")
+
+func test_pve_calls_offline():
+	var b := _backend(FakeTransport.new())
+	assert_true((await b.finish_pve({"level": 1, "placement": []})).get("offline", false))
+	assert_true((await b.pve_ranking()).get("offline", false))
+
+func test_pve_ranking_payload():
+	var t := FakeTransport.new()
+	t.responses = [_signup(), _ok({"week": 3, "top": [{"name": "Gracz #ab12", "score": 9}], "me": null})]
+	var r := await _backend(t).pve_ranking()
+	assert_eq(int(r.week), 3)
+	assert_string_contains(t.calls[1].url, "/functions/v1/pve_ranking")

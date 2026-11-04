@@ -124,6 +124,21 @@ func finish_attack(attack_id: String, commands: Array, surrender_tick: int) -> D
 	_take_profile(r.data)
 	return r.data
 
+## {stars, gained, crystals, profile} | {score, best, profile} | {error} | {offline: true}
+func finish_pve(body: Dictionary) -> Dictionary:
+	var r := await _call("finish_pve", body)
+	if r.status == 0:
+		return {"offline": true}
+	_take_profile(r.data)
+	return r.data
+
+## {week, top: [{name, score}], me: {score, rank} | null} | {offline: true}
+func pve_ranking() -> Dictionary:
+	var r := await _call("pve_ranking", {})
+	if r.status == 0:
+		return {"offline": true}
+	return r.data
+
 ## {profile} | {error: "no_crystals"|"bad_item"} | {offline: true}
 func shop_buy(item: String) -> Dictionary:
 	var r := await _call("shop_buy", {"item": item})
