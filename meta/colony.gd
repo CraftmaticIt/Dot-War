@@ -11,6 +11,8 @@ var energy := 0
 var crystals := 0
 var dots := 0
 var last_collect := 0
+var trophies := 0
+var attacks := 0
 var energy_rem := 0  # carried remainder of rate*secs (per 3600)
 var dots_rem := 0
 
@@ -192,7 +194,8 @@ func collect(now: int) -> Dictionary:
 	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
 
 const SAVE_VERSION := 1
-const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem"]
+const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem", "trophies", "attacks"]
+const MIN_ATTACK_DOTS := 10
 
 func to_dict() -> Dictionary:
 	var out := {"version": SAVE_VERSION, "cells": {}}
@@ -269,3 +272,23 @@ func to_sim_graph(owner: int) -> SimGraph:
 			if by_hex.has(nb) and id < by_hex[nb]:
 				g.link(id, by_hex[nb])
 	return g
+
+func can_attack(_now: int) -> String:
+	return "" if dots >= MIN_ATTACK_DOTS else "few_dots"
+
+## Spends all dots on an attack. Returns {dots, seed} or {error} with state unchanged.
+func begin_attack(now: int) -> Dictionary:
+	collect(now)
+	var err := can_attack(now)
+	if err != "":
+		return {"error": err}
+	var n := dots
+	dots = 0
+	dots_rem = 0
+	attacks += 1
+	return {"dots": n, "seed": attacks * 7919 + trophies}
+
+## Loot may exceed the storage cap (kept, see collect()). Trophies never go below 0.
+func apply_result(r: Dictionary) -> void:
+	energy += int(r.get("loot", 0))
+	trophies = maxi(0, trophies + int(r.get("trophies", 0)))
