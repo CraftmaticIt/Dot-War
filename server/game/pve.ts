@@ -3,12 +3,14 @@ import PVE_JSON from "./pve_levels.json" with { type: "json" };
 import * as B from "./buildings.ts";
 import { SimGraph } from "../sim/graph.ts";
 import { SimWorld } from "../sim/world.ts";
+import { SimRng } from "../sim/rng.ts";
+import { idiv } from "../sim/fx.ts";
 
 export type PveNode = { id: number; x: number; y: number; role: string };
 export type Wave = { tick: number; node: number; count: number; kind: number };
 export type PveLevelDef = {
   id?: number; chapter?: number; name?: string; nodes: PveNode[]; links: number[][];
-  allowed: Record<string, number>; level: number; waves: Wave[];
+  allowed: Record<string, number>; level: number; waves: Wave[]; arena?: boolean; week?: number;
 };
 export type Placement = { slot: number; type: string }[];
 export const PVE = PVE_JSON as unknown as {
@@ -65,3 +67,95 @@ export const coreId = (lvl: PveLevelDef): number => lvl.nodes.find((n) => n.role
 
 export const playerNodes = (lvl: PveLevelDef, placement: Placement): number[] =>
   [coreId(lvl), ...placement.map((e) => e.slot)].sort((a, b) => a - b);
+
+export const CAMPAIGN_TICKS = 12000;
+export const ARENA_TAIL_TICKS = 2400;
+export const WEEK_SECS = 604800;
+export type PveResult = { stars: number; lost: number; score: number; waves_started: number; ticks: number };
+
+export const starsFor = (coreLost: boolean, lost: number): number =>
+  coreLost ? 0 : 1 + (lost <= 1 ? 1 : 0) + (lost === 0 ? 1 : 0);
+
+/** PvE defense (port of pve/pve_match.gd): waves march on the core; enemy-held nodes forward
+ *  their garrison to the core every tick. The placement is the whole replay. */
+export class PveMatch {
+  world: SimWorld;
+  over = false;
+  private core: number;
+  private start: number[];
+  private spawns: Set<number>;
+  private waves: Wave[];
+  private limit: number;
+  private wavesStarted = 0;
+  private startedAtFall = -1;
+
+  constructor(lvl: PveLevelDef, placement: Placement, seed: number) {
+    this.world = buildWorld(lvl, placement, seed);
+    this.core = coreId(lvl);
+    this.start = playerNodes(lvl, placement);
+    this.spawns = new Set(lvl.nodes.filter((n) => n.role === "spawn").map((n) => n.id));
+    this.waves = lvl.waves ?? [];
+    const last = this.waves.reduce((m, w) => Math.max(m, w.tick), 0);
+    this.limit = lvl.arena ? last + ARENA_TAIL_TICKS : CAMPAIGN_TICKS;
+  }
+
+  step(): void {
+    if (this.over) return;
+    const w = this.world, t = w.tick;
+    for (const wv of this.waves) {
+      if (wv.tick === t) {
+        w.queue({ tick: t, type: "spawn", owner: ENEMY, node: wv.node, to: this.core, count: wv.count, kind: wv.kind });
+        this.wavesStarted += 1;
+      }
+    }
+    for (const id of w.graph.nodeIds()) {
+      const n = w.graph.node(id);
+      if (n.owner === ENEMY && !this.spawns.has(id) && n.garrison > 0 && id !== this.core) {
+        w.queue({ tick: t, type: "send", owner: ENEMY, from: id, to: this.core, percent: 100 });
+      }
+    }
+    w.step();
+    if (w.graph.node(this.core).owner !== PLAYER) { this.startedAtFall = this.wavesStarted; this.over = true; }
+    else if (this.wavesStarted === this.waves.length && !this.enemyAlive()) this.over = true;
+    else if (w.tick >= this.limit) this.over = true;
+  }
+
+  private enemyAlive(): boolean {
+    if (this.world.groups.some((g) => g.owner === ENEMY)) return true;
+    for (const id of this.world.graph.nodeIds()) {
+      const n = this.world.graph.node(id);
+      if (n.owner === ENEMY && !this.spawns.has(id) && n.garrison > 0) return true;
+    }
+    return false;
+  }
+
+  result(): PveResult {
+    const lost = this.start.filter((id) => this.world.graph.node(id).owner !== PLAYER).length;
+    const coreLost = this.startedAtFall >= 0;
+    return { stars: starsFor(coreLost, lost), lost, score: coreLost ? Math.max(0, this.startedAtFall - 1) : this.waves.length,
+      waves_started: this.wavesStarted, ticks: this.world.tick };
+  }
+}
+
+/** Runs to the end: {result, hash} (PvE vectors, server replay). */
+export function runPve(lvl: PveLevelDef, placement: Placement, seed: number): { result: PveResult; hash: number } {
+  const m = new PveMatch(lvl, placement, seed);
+  while (!m.over) m.step();
+  return { result: m.result(), hash: m.world.stateHash() };
+}
+
+export const weekIndex = (now: number): number => idiv(now - PVE.weekly.epoch, WEEK_SECS);
+
+/** Weekly arena: wave i at tick 40 + i*wave_gap, count 8 + 3i, rng picks spawn then (i >= 3) kind. */
+export function arenaLevel(week: number): PveLevelDef {
+  const a = PVE.arena;
+  const spawns = a.map.nodes.filter((n) => n.role === "spawn").map((n) => n.id).sort((x, y) => x - y);
+  const rng = new SimRng(week + 1);
+  const waves: Wave[] = [];
+  for (let i = 0; i < a.max_waves; i++) {
+    const node = spawns[rng.rangeI(spawns.length)];
+    const kind = i < 3 ? 0 : rng.rangeI(4);
+    waves.push({ tick: 40 + i * a.wave_gap, node, count: 8 + 3 * i, kind });
+  }
+  return { nodes: a.map.nodes, links: a.map.links, allowed: {}, level: 1, waves, arena: true, week };
+}

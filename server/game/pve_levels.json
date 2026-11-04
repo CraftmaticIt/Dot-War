@@ -1,39 +1,239 @@
 {
   "star_crystals": 5,
-  "weekly": {"epoch": 1793577600, "top_pct": 10, "reward": {"crystals": 30, "boosters": {"split": 1}}},
+  "weekly": {
+    "epoch": 1793577600,
+    "top_pct": 10,
+    "reward": {
+      "crystals": 30,
+      "boosters": {
+        "split": 1
+      }
+    }
+  },
   "arena": {
     "budget": 12,
-    "costs": {"laser": 3, "pulse": 3, "wall": 2, "trap": 2},
+    "costs": {
+      "laser": 3,
+      "pulse": 3,
+      "wall": 2,
+      "trap": 2
+    },
     "wave_gap": 300,
     "max_waves": 60,
     "map": {
       "nodes": [
-        {"id": 1, "x": 0, "y": 0, "role": "core"},
-        {"id": 2, "x": 4000, "y": 0, "role": "slot"},
-        {"id": 3, "x": 3000, "y": 3500, "role": "slot"},
-        {"id": 4, "x": 3000, "y": -3500, "role": "slot"},
-        {"id": 5, "x": 8000, "y": 0, "role": "slot"},
-        {"id": 6, "x": 7500, "y": 5000, "role": "slot"},
-        {"id": 7, "x": 7500, "y": -5000, "role": "slot"},
-        {"id": 8, "x": 11500, "y": 2500, "role": "slot"},
-        {"id": 9, "x": 11500, "y": -2500, "role": "slot"},
-        {"id": 20, "x": 16000, "y": 0, "role": "spawn"},
-        {"id": 21, "x": 14500, "y": 7000, "role": "spawn"},
-        {"id": 22, "x": 14500, "y": -7000, "role": "spawn"}
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 3000,
+          "y": 3500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 3000,
+          "y": -3500,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 6,
+          "x": 7500,
+          "y": 5000,
+          "role": "slot"
+        },
+        {
+          "id": 7,
+          "x": 7500,
+          "y": -5000,
+          "role": "slot"
+        },
+        {
+          "id": 8,
+          "x": 11500,
+          "y": 2500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 11500,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 20,
+          "x": 16000,
+          "y": 0,
+          "role": "spawn"
+        },
+        {
+          "id": 21,
+          "x": 14500,
+          "y": 7000,
+          "role": "spawn"
+        },
+        {
+          "id": 22,
+          "x": 14500,
+          "y": -7000,
+          "role": "spawn"
+        }
       ],
-      "links": [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [2, 5], [3, 6], [4, 7], [5, 8], [5, 9], [6, 8], [7, 9],
-        [8, 20], [9, 20], [6, 21], [7, 22]]
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          20
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          6,
+          21
+        ],
+        [
+          7,
+          22
+        ]
+      ]
     }
   },
   "levels": [
     {
-      "id": 1, "chapter": 1, "name": "Pierwszy laser",
-      "nodes": [{"id": 1, "x": 0, "y": 0, "role": "core"}, {"id": 2, "x": 6000, "y": 0, "role": "slot"},
-        {"id": 9, "x": 14000, "y": 0, "role": "spawn"}],
-      "links": [[1, 2], [2, 9]],
-      "allowed": {"laser": 1},
+      "id": 1,
+      "chapter": 1,
+      "name": "Pierwszy laser",
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 6000,
+          "y": 2000,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          9
+        ]
+      ],
+      "allowed": {
+        "laser": 1
+      },
       "level": 1,
-      "waves": [{"tick": 40, "node": 9, "count": 12, "kind": 0}]
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 120,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 200,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 280,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 360,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        }
+      ]
     }
   ]
 }

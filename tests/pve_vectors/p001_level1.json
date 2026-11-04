@@ -1,0 +1,20 @@
+{
+  "level": 1,
+  "placement": [
+    {
+      "slot": 2,
+      "type": "laser"
+    }
+  ],
+  "seed": 1,
+  "expected": {
+    "result": {
+      "stars": 3,
+      "lost": 0,
+      "score": 5,
+      "waves_started": 5,
+      "ticks": 454
+    },
+    "hash": 2322339697
+  }
+}

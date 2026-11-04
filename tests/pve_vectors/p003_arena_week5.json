@@ -1,0 +1,36 @@
+{
+  "week": 5,
+  "seed": 5,
+  "placement": [
+    {
+      "slot": 2,
+      "type": "laser"
+    },
+    {
+      "slot": 5,
+      "type": "pulse"
+    },
+    {
+      "slot": 8,
+      "type": "wall"
+    },
+    {
+      "slot": 9,
+      "type": "trap"
+    },
+    {
+      "slot": 3,
+      "type": "wall"
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 0,
+      "lost": 5,
+      "score": 11,
+      "waves_started": 12,
+      "ticks": 3457
+    },
+    "hash": 3269096065
+  }
+}

@@ -18,7 +18,7 @@ Godot 4.7 (GDScript) client, TypeScript server on Supabase. Owner talks Polish; 
 - Iterate in sorted id order; never rely on Dictionary/Map order for anything that changes state.
 - `canonical()` is a contract: new state may only append segments that are absent in old vectors.
 - Any change to sim/battle/meta rules must change GD **and** TS together.
-- `tests/vectors/*.json`, `tests/battle_vectors/*.json` are generated (`/regen-vectors`), never hand-edited
+- `tests/vectors/*.json`, `tests/battle_vectors/*.json`, `tests/pve_vectors/*.json` are generated (`/regen-vectors`), never hand-edited
   (a hook blocks it). Old hashes must stay unchanged unless the change is intentional and called out.
 - Server writes are atomic (one SQL statement/RPC per Repo method; CAS on `colonies.rev`, claim
   `open→settling`). Crystals: `players.crystals` is the truth, mirrored into `colonies.data.crystals`.
