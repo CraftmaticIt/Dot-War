@@ -93,4 +93,30 @@ func _init() -> void:
 		{"tick": 90, "type": "boost", "owner": 1, "booster": "emp", "node": 4}, _cmd(100, 1, 2, 4, 100),
 		{"tick": 101, "type": "boost", "owner": 2, "booster": "nuke", "node": 4}]
 	_write("v007_boosts", g, 7, cmds, 150)
+	# v008: enemy kinds (fast + rage, armored, splash near a player node) under laser and pulse.
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 70, 1)                       # core
+	g.add_node(2, 4000, 0, 1, 6, 0, "laser", 0, 2)
+	g.add_node(3, 4000, 2500, 1, 9, 0, "pulse", 0, 1)
+	g.add_node(9, 14000, 0, 2, 0, 0)                    # spawn
+	g.add_node(8, 14000, 5000, 2, 0, 0)                 # spawn
+	g.link(1, 2); g.link(1, 3); g.link(2, 9); g.link(3, 8)
+	cmds = [_spawn(0, 9, 1, 3, 1), _spawn(5, 9, 1, 5, 2), _spawn(10, 8, 1, 1, 3), _spawn(12, 8, 1, 3, 0),
+		{"tick": 0, "type": "boost", "owner": 2, "booster": "rage", "node": 1}, _spawn(40, 9, 1, 2, 3), _spawn(60, 9, 1, 30, 1)]
+	_write("v008_kinds", g, 8, cmds, 300)
+	# v009: spawn validation — every rejection plus one valid spawn after a malformed one.
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 20, 0)
+	g.add_node(2, 6000, 0, 0, 0, 0)
+	g.add_node(9, 12000, 0, 2, 4, 0)
+	g.add_node(7, 30000, 0, 2, 0, 0)                    # spawn with no path
+	g.link(1, 2); g.link(2, 9)
+	cmds = [_spawn(0, 9, 1, 0, 0), _spawn(0, 9, 1, 5, 4), _spawn(0, 2, 1, 5, 0), _spawn(0, 77, 1, 5, 0),
+		_spawn(0, 7, 1, 5, 0), {"tick": 1, "type": "spawn", "owner": 2, "node": 9, "to": 1, "count": "5", "kind": 0},
+		{"tick": 2, "type": "spawn", "owner": 0, "node": 9, "to": 1, "count": 5, "kind": 0},
+		_spawn(3, 9, 9, 5, 0), _spawn(3, 9, 1, 25, 1)]
+	_write("v009_spawn", g, 9, cmds, 120)
 	quit()
+
+func _spawn(t: int, node: int, to: int, count: int, kind: int) -> Dictionary:
+	return {"tick": t, "type": "spawn", "owner": 2, "node": node, "to": to, "count": count, "kind": kind}

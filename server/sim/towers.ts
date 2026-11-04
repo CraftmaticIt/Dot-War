@@ -1,6 +1,6 @@
 // Tower damage pass (port of sim/towers.gd). dmg = Fx dots per tick.
 import * as Fx from "./fx.ts";
-import type { SimWorld, Group } from "./world.ts";
+import { SPLASH_DMG, SPLASH_RANGE, type SimWorld, type Group } from "./world.ts";
 
 export const SPECS: Record<string, { range: number; dmg: number }> = {
   laser: { range: 4000, dmg: 200 },
@@ -25,21 +25,42 @@ export function applyTowers(world: SimWorld): void {
         const d = Fx.dist(n.x, n.y, p.x, p.y);
         if (d <= spec.range && (target === null || d < best)) { target = g; best = d; }
       }
-      if (target) hit(target, shielded(world, target, dmg));
+      if (target) hit(target, dmgFor(world, target, dmg));
     } else {
       for (const g of world.groups) {
         if (g.owner === n.owner || g.count <= 0) continue;
         const p = pos.get(g.id)!;
-        if (Fx.dist(n.x, n.y, p.x, p.y) <= spec.range) hit(g, shielded(world, g, dmg));
+        if (Fx.dist(n.x, n.y, p.x, p.y) <= spec.range) hit(g, dmgFor(world, g, dmg));
       }
     }
   }
   const alive: Group[] = [];
   for (const g of world.groups) {
     if (g.count > 0) alive.push(g);
-    else world.events.push({ type: "group_destroyed", group: g.id });
+    else {
+      world.events.push({ type: "group_destroyed", group: g.id });
+      if (g.kind === 3) splash(world, g, pos.get(g.id)!);
+    }
   }
   world.groups = alive;
+}
+
+/** Splash group killed by towers: nodes of another non-neutral owner in range lose SPLASH_DMG. */
+function splash(world: SimWorld, g: Group, p: { x: number; y: number }): void {
+  const hitIds: number[] = [];
+  for (const id of world.graph.nodeIds()) {
+    const n = world.graph.node(id);
+    if (n.owner > 0 && n.owner !== g.owner && Fx.dist(n.x, n.y, p.x, p.y) <= SPLASH_RANGE) {
+      n.garrison = Math.max(0, n.garrison - SPLASH_DMG);
+      hitIds.push(id);
+    }
+  }
+  if (hitIds.length) world.events.push({ type: "splash", group: g.id, nodes: hitIds });
+}
+
+function dmgFor(world: SimWorld, g: Group, dmg: number): number {
+  const d = shielded(world, g, dmg);
+  return g.kind === 2 ? Fx.idiv(d, 2) : d;
 }
 
 function shielded(world: SimWorld, g: Group, dmg: number): number {

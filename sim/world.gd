@@ -21,6 +21,12 @@ const NUM_KEYS := ["tick", "owner", "from", "to", "percent"]
 const BOOST_KEYS := ["tick", "owner", "node"]
 const BOOST_TICKS := {"rage": 160, "shield": 120, "emp": 80, "split": 200}
 const EMP_RANGE := 3000
+## PvE only: enemy waves enter through `spawn` (never produced from player input).
+const SPAWN_KEYS := ["tick", "owner", "node", "to", "count", "kind"]
+## Group kinds: 0 normal, 1 fast, 2 armored (half tower damage), 3 splash (hurts nearby nodes on death).
+const KIND_MAX := 3
+const SPLASH_RANGE := 2000
+const SPLASH_DMG := 5
 
 func _init(p_graph: SimGraph, seed: int) -> void:
 	graph = p_graph
@@ -43,6 +49,16 @@ func queue(cmd: Dictionary) -> void:
 				return
 			cb[k] = int(v)
 		_queue.append(cb)
+		return
+	if typeof(t) == TYPE_STRING and t == "spawn":
+		var cs := {"type": "spawn"}
+		for k in SPAWN_KEYS:
+			var v = cmd.get(k)
+			if typeof(v) != TYPE_INT and typeof(v) != TYPE_FLOAT:
+				_bad.append(cmd)
+				return
+			cs[k] = int(v)
+		_queue.append(cs)
 		return
 	if typeof(t) != TYPE_STRING or t != "send":
 		_bad.append(cmd)
@@ -90,6 +106,8 @@ func _apply(cmd: Dictionary) -> void:
 			_apply_send(cmd)
 		"boost":
 			_apply_boost(cmd)
+		"spawn":
+			_apply_spawn(cmd)
 		_:
 			_reject(cmd, "unknown_type")
 
@@ -115,10 +133,33 @@ func _apply_send(cmd: Dictionary) -> void:
 		return _reject(cmd, "empty")
 	n.garrison -= count
 	var g := {"id": _next_group_id, "owner": owner, "count": count, "path": p,
-		"seg": 0, "progress": 0, "dmg_acc": 0}
+		"seg": 0, "progress": 0, "dmg_acc": 0, "kind": 0}
 	_next_group_id += 1
 	groups.append(g)
 	events.append({"type": "group_spawned", "group": g.id, "owner": owner, "count": count})
+
+func _apply_spawn(cmd: Dictionary) -> void:
+	var owner := int(cmd.owner)
+	var node := int(cmd.node)
+	var to := int(cmd.to)
+	if owner <= 0:
+		return _reject(cmd, "bad_owner")
+	if not graph.has_node(node) or not graph.has_node(to) or node == to:
+		return _reject(cmd, "bad_node")
+	if graph.node(node).owner != owner:
+		return _reject(cmd, "not_owner")
+	if int(cmd.kind) < 0 or int(cmd.kind) > KIND_MAX:
+		return _reject(cmd, "bad_kind")
+	if int(cmd.count) <= 0:
+		return _reject(cmd, "empty")
+	var p := graph.path(node, to)
+	if p.is_empty():
+		return _reject(cmd, "no_path")
+	var g := {"id": _next_group_id, "owner": owner, "count": int(cmd.count), "path": p,
+		"seg": 0, "progress": 0, "dmg_acc": 0, "kind": int(cmd.kind)}
+	_next_group_id += 1
+	groups.append(g)
+	events.append({"type": "group_spawned", "group": g.id, "owner": owner, "count": g.count})
 
 func _apply_boost(cmd: Dictionary) -> void:
 	if int(cmd.owner) <= 0:
@@ -170,7 +211,8 @@ func _move() -> void:
 ## Returns true when the group was consumed by a node this tick.
 func _advance(g: Dictionary) -> bool:
 	var target: int = g.path[g.path.size() - 1]
-	g.progress += GROUP_SPEED * 3 / 2 if has_effect("rage", g.owner, target) else GROUP_SPEED
+	var speed := GROUP_SPEED * 3 / 2 if g.kind == 1 else GROUP_SPEED
+	g.progress += speed * 3 / 2 if has_effect("rage", g.owner, target) else speed
 	while true:
 		var a: int = g.path[g.seg]
 		var b: int = g.path[g.seg + 1]
@@ -237,7 +279,10 @@ func canonical() -> String:
 		var p := PackedStringArray()
 		for v in g.path:
 			p.append(str(v))
-		parts.append("g%d,%d,%d,%d,%d,%d,%s" % [g.id, g.owner, g.count, g.seg, g.progress, g.dmg_acc, "-".join(p)])
+		var gs := "g%d,%d,%d,%d,%d,%d,%s" % [g.id, g.owner, g.count, g.seg, g.progress, g.dmg_acc, "-".join(p)]
+		if g.kind != 0:
+			gs += ",k%d" % g.kind  # only non-normal kinds: keeps pre-kind vector hashes stable
+		parts.append(gs)
 	for e in effects:  # absent when no booster is active: older vectors keep their hashes
 		parts.append("e%s,%d,%d,%d" % [e.type, e.owner, e.node, e.until])
 	return "|".join(parts)

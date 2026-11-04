@@ -9,12 +9,20 @@ export const GROUP_SPEED = 150;
 
 export type Group = {
   id: number; owner: number; count: number; path: number[]; seg: number; progress: number; dmg_acc: number;
+  /** 0 normal, 1 fast, 2 armored, 3 splash. */
+  kind: number;
 };
 export type Cmd = { tick: number; type: "send"; owner: number; from: number; to: number; percent: number };
 export type BoostCmd = { tick: number; type: "boost"; owner: number; booster: string; node: number };
+export type SpawnCmd = { tick: number; type: "spawn"; owner: number; node: number; to: number; count: number; kind: number };
 export type Effect = { type: string; owner: number; node: number; until: number };
 export const BOOST_TICKS: Record<string, number> = { rage: 160, shield: 120, emp: 80, split: 200 };
 export const EMP_RANGE = 3000;
+/** PvE only: enemy waves enter through `spawn` (never produced from player input). */
+const SPAWN_KEYS = ["tick", "owner", "node", "to", "count", "kind"] as const;
+export const KIND_MAX = 3;
+export const SPLASH_RANGE = 2000;
+export const SPLASH_DMG = 5;
 export type SimEvent = Record<string, unknown> & { type: string };
 
 const NUM_KEYS = ["tick", "owner", "from", "to", "percent"] as const;
@@ -26,7 +34,7 @@ export class SimWorld {
   groups: Group[] = [];
   events: SimEvent[] = [];
   effects: Effect[] = [];
-  private q: (Cmd | BoostCmd)[] = [];
+  private q: (Cmd | BoostCmd | SpawnCmd)[] = [];
   private bad: unknown[] = [];
   private nextGroupId = 0;
 
@@ -45,6 +53,15 @@ export class SimWorld {
         b[k] = Math.trunc(cmd[k]);
       }
       this.q.push(b as BoostCmd);
+      return;
+    }
+    if (cmd !== null && typeof cmd === "object" && cmd.type === "spawn") {
+      const s: any = { type: "spawn" };
+      for (const k of SPAWN_KEYS) {
+        if (typeof cmd[k] !== "number" || !Number.isFinite(cmd[k])) { this.bad.push(cmd); return; }
+        s[k] = Math.trunc(cmd[k]);
+      }
+      this.q.push(s as SpawnCmd);
       return;
     }
     if (cmd === null || typeof cmd !== "object" || cmd.type !== "send") { this.bad.push(cmd); return; }
@@ -69,10 +86,11 @@ export class SimWorld {
   private applyCommands(): void {
     for (const c of this.bad) this.reject(c, "bad_cmd");
     this.bad = [];
-    const keep: (Cmd | BoostCmd)[] = [];
+    const keep: (Cmd | BoostCmd | SpawnCmd)[] = [];
     for (const c of this.q) {
       if (c.tick === this.tick) {
         if (c.type === "boost") this.applyBoost(c);
+        else if (c.type === "spawn") this.applySpawn(c);
         else this.applySend(c);
       }
       else if (c.tick > this.tick) keep.push(c);
@@ -93,9 +111,23 @@ export class SimWorld {
     const count = Fx.idiv(n.garrison * c.percent, 100);
     if (count <= 0) return this.reject(c, "empty");
     n.garrison -= count;
-    const grp: Group = { id: this.nextGroupId++, owner: c.owner, count, path: p, seg: 0, progress: 0, dmg_acc: 0 };
+    const grp: Group = { id: this.nextGroupId++, owner: c.owner, count, path: p, seg: 0, progress: 0, dmg_acc: 0, kind: 0 };
     this.groups.push(grp);
     this.events.push({ type: "group_spawned", group: grp.id, owner: c.owner, count });
+  }
+
+  private applySpawn(c: SpawnCmd): void {
+    if (c.owner <= 0) return this.reject(c, "bad_owner");
+    const g = this.graph;
+    if (!g.hasNode(c.node) || !g.hasNode(c.to) || c.node === c.to) return this.reject(c, "bad_node");
+    if (g.node(c.node).owner !== c.owner) return this.reject(c, "not_owner");
+    if (c.kind < 0 || c.kind > KIND_MAX) return this.reject(c, "bad_kind");
+    if (c.count <= 0) return this.reject(c, "empty");
+    const p = g.path(c.node, c.to);
+    if (p.length === 0) return this.reject(c, "no_path");
+    const grp: Group = { id: this.nextGroupId++, owner: c.owner, count: c.count, path: p, seg: 0, progress: 0, dmg_acc: 0, kind: c.kind };
+    this.groups.push(grp);
+    this.events.push({ type: "group_spawned", group: grp.id, owner: c.owner, count: c.count });
   }
 
   private applyBoost(c: BoostCmd): void {
@@ -141,7 +173,8 @@ export class SimWorld {
 
   private advance(g: Group): boolean {
     const target = g.path[g.path.length - 1];
-    g.progress += this.hasEffect("rage", g.owner, target) ? Fx.idiv(GROUP_SPEED * 3, 2) : GROUP_SPEED;
+    const speed = g.kind === 1 ? Fx.idiv(GROUP_SPEED * 3, 2) : GROUP_SPEED;
+    g.progress += this.hasEffect("rage", g.owner, target) ? Fx.idiv(speed * 3, 2) : speed;
     for (;;) {
       const a = g.path[g.seg], b = g.path[g.seg + 1];
       const len = this.graph.edgeLength(a, b);
@@ -196,7 +229,9 @@ export class SimWorld {
       parts.push(seg);
     }
     for (const g of this.groups) {
-      parts.push(`g${g.id},${g.owner},${g.count},${g.seg},${g.progress},${g.dmg_acc},${g.path.join("-")}`);
+      let gs = `g${g.id},${g.owner},${g.count},${g.seg},${g.progress},${g.dmg_acc},${g.path.join("-")}`;
+      if (g.kind !== 0) gs += `,k${g.kind}`;  // only non-normal kinds: keeps pre-kind hashes stable
+      parts.push(gs);
     }
     for (const e of this.effects) parts.push(`e${e.type},${e.owner},${e.node},${e.until}`);
     return parts.join("|");

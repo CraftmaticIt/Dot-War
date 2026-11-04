@@ -1,0 +1,151 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 0,
+        "owner": 1,
+        "garrison": 70,
+        "prod_per_sec": 1,
+        "tower": "",
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
+      },
+      {
+        "id": 2,
+        "x": 4000,
+        "y": 0,
+        "owner": 1,
+        "garrison": 6,
+        "prod_per_sec": 0,
+        "tower": "laser",
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 2
+      },
+      {
+        "id": 3,
+        "x": 4000,
+        "y": 2500,
+        "owner": 1,
+        "garrison": 9,
+        "prod_per_sec": 0,
+        "tower": "pulse",
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
+      },
+      {
+        "id": 8,
+        "x": 14000,
+        "y": 5000,
+        "owner": 2,
+        "garrison": 0,
+        "prod_per_sec": 0,
+        "tower": "",
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
+      },
+      {
+        "id": 9,
+        "x": 14000,
+        "y": 0,
+        "owner": 2,
+        "garrison": 0,
+        "prod_per_sec": 0,
+        "tower": "",
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
+      }
+    ],
+    "links": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        3,
+        8
+      ]
+    ]
+  },
+  "seed": 8,
+  "commands": [
+    {
+      "tick": 0,
+      "type": "spawn",
+      "owner": 2,
+      "node": 9,
+      "to": 1,
+      "count": 3,
+      "kind": 1
+    },
+    {
+      "tick": 5,
+      "type": "spawn",
+      "owner": 2,
+      "node": 9,
+      "to": 1,
+      "count": 5,
+      "kind": 2
+    },
+    {
+      "tick": 10,
+      "type": "spawn",
+      "owner": 2,
+      "node": 8,
+      "to": 1,
+      "count": 1,
+      "kind": 3
+    },
+    {
+      "tick": 12,
+      "type": "spawn",
+      "owner": 2,
+      "node": 8,
+      "to": 1,
+      "count": 3,
+      "kind": 0
+    },
+    {
+      "tick": 0,
+      "type": "boost",
+      "owner": 2,
+      "booster": "rage",
+      "node": 1
+    },
+    {
+      "tick": 40,
+      "type": "spawn",
+      "owner": 2,
+      "node": 9,
+      "to": 1,
+      "count": 2,
+      "kind": 3
+    },
+    {
+      "tick": 60,
+      "type": "spawn",
+      "owner": 2,
+      "node": 9,
+      "to": 1,
+      "count": 30,
+      "kind": 1
+    }
+  ],
+  "ticks": 300,
+  "expected_hash": 2106036666,
+  "expected_canonical": "t300|n1,1,85,0|n2,2,24,0|n3,1,2,0|n8,2,0,0|n9,2,0,0"
+}
