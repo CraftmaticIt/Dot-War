@@ -5,3 +5,4 @@ addons/gut/
 build/
 *.apk
 *.aab
+supabase/functions/_shared/server/
