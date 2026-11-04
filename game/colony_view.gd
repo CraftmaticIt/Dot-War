@@ -144,10 +144,18 @@ func _ready() -> void:
 	if backend != null and backend.is_configured():
 		_sync_server()
 
-## What to keep after a sync: the server copy, unless the player acted while the request was
-## in flight (then keep local and sync again) or we are offline. null = keep current.
-static func after_sync(before: Dictionary, current: ColonyState, got: ColonyState, online: bool) -> ColonyState:
-	if not online or current.to_dict() != before:
+## What to keep after a sync. null = keep current. Rejected: always the server copy (the local
+## state is invalid). Accepted: the server copy unless the player acted while the request was in
+## flight (then keep local and sync again). Production ticking every second is not an action;
+## the caller re-collects the adopted copy up to now.
+static func after_sync(before: Dictionary, current: ColonyState, got: ColonyState, online: bool,
+		accepted := true) -> ColonyState:
+	if not online:
+		return null
+	if not accepted:
+		return got
+	var now_d := current.to_dict()
+	if now_d.cells != before.cells or now_d.crystals_spent != before.crystals_spent:
 		return null
 	return got if got.to_dict() != before else null
 
@@ -160,9 +168,11 @@ func _sync_server() -> void:
 	var got := await backend.sync(colony)
 	if backend.online and colony.to_dict() != before:
 		_sync_in = SYNC_DEBOUNCE  # acted meanwhile: upload again shortly
-	var keep := after_sync(before, colony, got, backend.online)
+	var accepted: bool = backend.last_sync.get("accepted", true)
+	var keep := after_sync(before, colony, got, backend.online, accepted)
 	if keep != null:
 		colony = keep
+		colony.collect(_now())
 		_save()
 	if backend.online:
 		var lr = backend.profile.get("last_reward")
@@ -172,7 +182,7 @@ func _sync_server() -> void:
 		var d: Dictionary = backend.last_sync.get("defenses", {})
 		if int(d.get("count", 0)) > 0:
 			_show_toast("Twoja kolonia została zaatakowana (%d×): −%d energii" % [int(d.count), int(d.get("loot", 0))])
-		elif not backend.last_sync.get("accepted", true) and keep != null:
+		elif not accepted:
 			_show_toast("Serwer przywrócił zapis (%s)" % backend.last_sync.get("reason", "?"))
 	elif backend.session_lost:
 		_show_toast("Sesja serwera utracona – gra offline")
@@ -266,6 +276,8 @@ func _on_attack() -> void:
 func _on_attack_inner() -> void:
 	if backend != null and backend.is_configured():
 		await _sync_server()  # server must see the dots produced since the last upload
+		if backend.online and not backend.last_sync.get("accepted", true):
+			await _sync_server()  # adopted the server copy: upload it with production up to now
 		var lo: Array = MetaPanel.loadout if not MetaPanel.loadout.is_empty() \
 			else MetaPanel.auto_loadout(backend.profile.get("boosters", {}))
 		var res := await backend.find_opponent(lo)

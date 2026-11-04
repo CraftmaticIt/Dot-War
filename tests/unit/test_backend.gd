@@ -113,5 +113,9 @@ func test_adopt_only_when_unchanged_meanwhile():
 	assert_eq(CV.after_sync(before.to_dict(), before, server, true).trophies, 9)
 	var changed := ColonyState.new_default(T0)
 	changed.energy = 1
-	assert_null(CV.after_sync(before.to_dict(), changed, server, true), "local action during sync -> keep local, resync")
+	assert_eq(CV.after_sync(before.to_dict(), changed, server, true).trophies, 9, "production tick is not an action")
+	var built := ColonyState.new_default(T0)
+	built.cells["-1,0"] = {"type": "wall", "level": 0, "build_end": T0 + 5, "target_level": 1}
+	assert_null(CV.after_sync(before.to_dict(), built, server, true), "local action during sync -> keep local, resync")
+	assert_eq(CV.after_sync(before.to_dict(), built, server, true, false).trophies, 9, "rejected -> always the server copy")
 	assert_null(CV.after_sync(before.to_dict(), before, server, false), "offline -> nothing to adopt")

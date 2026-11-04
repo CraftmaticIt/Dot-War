@@ -191,3 +191,17 @@ test("malformed commands ignored, no crash", async () => {
   const r2 = await finishAttack(repo, "a", "nope", "garbage" as any, -1, T0);
   assert.equal(r2.error, "not_found");
 });
+
+test("after an attack the client's copy (dots spent, loot added, above cap) is accepted", async () => {
+  const repo = new MemoryRepo();
+  const c = await setup(repo, "u1", 0, 50, 2000);  // energy at the core L1 cap
+  assert.equal((await syncColony(repo, "u1", c.toDict(), T0 + 10)).accepted, true);
+  assert.equal(await repo.consumeDots("u1", 10), 50);    // find_opponent
+  await repo.creditEnergy("u1", 800, true);              // finish_attack credits the loot
+  // Client: same find (dots 0), 3 min of battle, then applies the same loot locally.
+  c.dots = 0; c.dotsRem = 0; c.attackOpen = 1;
+  c.collect(T0 + 190);
+  c.energy += 800; c.attackOpen = 0;
+  const r = await syncColony(repo, "u1", c.toDict(), T0 + 200);
+  assert.equal(r.accepted, true, r.reason);
+});
