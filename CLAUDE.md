@@ -35,3 +35,8 @@ Godot 4.7 (GDScript) client, TypeScript server on Supabase. Owner talks Polish; 
   deploys functions, runs `scripts/smoke_backend.ts` against the live project (practice attacks only).
 - APK: workflow `android`; only `main` builds get the backend URL/anon key (online). Use `/ship`.
 - Process per stage: brainstorm → plan → TDD tasks → independent whole-branch review → fix pass → live smoke → main.
+
+## Ponytail (always on)
+- `.claude/skills/ponytail*` = vendored DietrichGebert/ponytail (MIT). Mode **full** is active every session:
+  follow `.claude/skills/ponytail/SKILL.md` (smallest complete change). Hard rules above still win.
+- Off: "stop ponytail" / "normal mode". Also `/ponytail-review`, `/ponytail-audit`, `/ponytail-debt`.
