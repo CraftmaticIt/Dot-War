@@ -1,0 +1,27 @@
+# Supabase project config, pushed by CI (`supabase config push`).
+project_id = "dot-war"
+
+[api]
+enabled = true
+schemas = ["public"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "https://github.com/CraftmaticIt/Dot-War"
+enable_signup = true
+enable_anonymous_sign_ins = true
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+[auth.email]
+enable_signup = false
+
+[functions.sync_colony]
+verify_jwt = true
+
+[functions.find_opponent]
+verify_jwt = true
+
+[functions.finish_attack]
+verify_jwt = true
