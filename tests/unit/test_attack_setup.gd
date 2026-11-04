@@ -16,7 +16,7 @@ func test_three_entries_left_of_colony():
 		var n := w.graph.node(id)
 		assert_eq(n.owner, AttackSetup.ATTACKER)
 		assert_eq(n.x, 10000 - AttackSetup.ENTRY_GAP)
-		assert_eq(n.prod_per_sec, 0)
+		assert_eq(n.prod_per_sec, AttackSetup.ENTRY_PROD)
 		ys.append(n.y)
 	assert_eq(ys, [0, 10000, 20000])
 

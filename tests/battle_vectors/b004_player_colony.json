@@ -46,9 +46,9 @@
         "target_level": 1
       }
     },
-    "energy": 500,
+    "energy": 1000,
     "crystals": 50,
-    "dots": 0,
+    "dots": 50,
     "last_collect": 1800000000,
     "energy_rem": 0,
     "dots_rem": 0,
@@ -107,13 +107,13 @@
     {
       "tick": 280,
       "from": 1002,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
       "tick": 320,
       "from": 1003,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
@@ -125,13 +125,13 @@
     {
       "tick": 400,
       "from": 1002,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
       "tick": 440,
       "from": 1003,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
@@ -143,24 +143,36 @@
     {
       "tick": 520,
       "from": 1002,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
       "tick": 560,
       "from": 1003,
-      "to": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 600,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 640,
+      "from": 1001,
+      "to": 3,
       "percent": 50
     }
   ],
   "expected": {
     "result": {
       "stars": 0,
-      "destroyed_pct": 0,
+      "destroyed_pct": 28,
       "loot": 0,
       "trophies": -8
     },
-    "hash": 1512943901,
+    "hash": 1128727224,
     "ticks": 3600
   }
 }

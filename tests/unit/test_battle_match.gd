@@ -61,6 +61,8 @@ func test_core_only_star():
 
 func test_no_dots_left_ends_early():
 	var m := _match({1: [6000, 0, 500]}, 3)
+	for e in AttackSetup.ENTRY_IDS:
+		m.world.graph.node(e).prod_per_sec = 0  # producing entries never run dry; test the rule itself
 	_send_all(m, 1)
 	_run(m)
 	assert_true(m.over)

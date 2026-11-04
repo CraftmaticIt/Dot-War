@@ -5,6 +5,8 @@ import { SimWorld } from "../sim/world.ts";
 
 export const ATTACKER = 1, DEFENDER = 2;
 export const ENTRY_IDS = [1001, 1002, 1003];
+/** Each attacker entry base produces this many dots per second during the battle. */
+export const ENTRY_PROD = 1;
 export const ENTRY_GAP = 6000, MIN_SPREAD = 8000;
 
 export function buildAttack(defender: SimGraph, attackerDots: number, seed: number): SimWorld {
@@ -27,7 +29,7 @@ export function buildAttack(defender: SimGraph, attackerDots: number, seed: numb
   const share = Fx.idiv(attackerDots, 3), rest = attackerDots % 3;
   ENTRY_IDS.forEach((eid, i) => {
     const x = minX - ENTRY_GAP;
-    g.addNode(eid, x, ys[i], ATTACKER, share + (i < rest ? 1 : 0), 0);
+    g.addNode(eid, x, ys[i], ATTACKER, share + (i < rest ? 1 : 0), ENTRY_PROD);
     const scored = ids.map((id) => [Fx.dist(x, ys[i], g.node(id).x, g.node(id).y), id]);
     scored.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     for (const [, id] of scored.slice(0, 2)) g.link(eid, id);

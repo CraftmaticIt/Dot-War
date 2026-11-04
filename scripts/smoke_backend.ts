@@ -25,7 +25,9 @@ const su = await call("/auth/v1/signup", {});
 expect(su.status === 200 && !!su.data.access_token, "anonymous sign-up", su);
 const tok = su.data.access_token;
 const now = Math.floor(Date.now() / 1000);
-const s = await call("/functions/v1/sync_colony", { colony: ColonyState.newDefault(now).toDict() }, tok);
+const c0 = ColonyState.newDefault(now);
+c0.dots = 0; // new colonies start with dots; this account must have none for the few_dots check
+const s = await call("/functions/v1/sync_colony", { colony: c0.toDict() }, tok);
 expect(s.status === 200 && s.data.accepted === true, "sync_colony accepts first upload", s);
 const pr = s.data.profile;
 expect(!!pr && pr.quests?.length === 3 && pr.boosters?.split === 1 && typeof pr.league_name === "string",

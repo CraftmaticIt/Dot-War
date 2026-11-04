@@ -147,6 +147,11 @@ func _refresh_boost_bar() -> void:
 		_boost_bar.remove_child(c)
 		c.queue_free()
 	_boost_bar.visible = not battle.boosts_left.is_empty()
+	var hint := Label.new()
+	hint.text = "Teraz stuknij węzeł-cel" if _armed != "" else "Boostery: stuknij, potem węzeł"
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	_boost_bar.add_child(hint)
 	var seen := {}
 	for b in battle.boosts_left:
 		if seen.has(b):

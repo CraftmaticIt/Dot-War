@@ -63,3 +63,11 @@ func test_backend_shop_buy_payload():
 	assert_eq(JSON.parse_string(t.calls[1].body).item, "rage")
 	assert_eq(int(b.profile.crystals), 25)
 	assert_false(r.has("error"))
+
+func test_auto_loadout_takes_one_of_each_owned_up_to_limit():
+	assert_eq(MetaPanel.auto_loadout({}), [])
+	var l := MetaPanel.auto_loadout({"rage": 2, "shield": 0, "emp": 1, "split": 3})
+	assert_eq(l.size(), mini(3, MetaDefs.max_loadout()))
+	assert_false(l.has("shield"), "not owned")
+	for b in l:
+		assert_eq(l.count(b), 1)

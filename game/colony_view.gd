@@ -266,7 +266,9 @@ func _on_attack() -> void:
 func _on_attack_inner() -> void:
 	if backend != null and backend.is_configured():
 		await _sync_server()  # server must see the dots produced since the last upload
-		var res := await backend.find_opponent(MetaPanel.loadout)
+		var lo: Array = MetaPanel.loadout if not MetaPanel.loadout.is_empty() \
+			else MetaPanel.auto_loadout(backend.profile.get("boosters", {}))
+		var res := await backend.find_opponent(lo)
 		if not res.has("offline"):
 			if res.has("error"):
 				_show_toast(few_dots_text(colony) if res.error == "few_dots"

@@ -5,6 +5,8 @@ class_name AttackSetup
 const ATTACKER := 1
 const DEFENDER := 2
 const ENTRY_IDS := [1001, 1002, 1003]
+## Each attacker entry base produces this many dots per second during the battle.
+const ENTRY_PROD := 1
 const ENTRY_GAP := 6000
 const MIN_SPREAD := 8000
 
@@ -32,7 +34,7 @@ static func build(defender: SimGraph, attacker_dots: int, seed: int) -> SimWorld
 	var rest := attacker_dots % ENTRY_IDS.size()
 	for i in ENTRY_IDS.size():
 		var x := min_x - ENTRY_GAP
-		g.add_node(ENTRY_IDS[i], x, ys[i], ATTACKER, share + (1 if i < rest else 0), 0)
+		g.add_node(ENTRY_IDS[i], x, ys[i], ATTACKER, share + (1 if i < rest else 0), ENTRY_PROD)
 		for target in _nearest(g, ids, x, ys[i], 2):
 			g.link(ENTRY_IDS[i], target)
 	return SimWorld.new(g, seed)

@@ -26,6 +26,14 @@ static func toggle_loadout(l: Array, b: String, owned: Dictionary) -> Array:
 		out.erase(b)
 	return out
 
+## Used when the player picked no loadout: one of each owned booster, up to the limit.
+static func auto_loadout(owned: Dictionary) -> Array:
+	var out := []
+	for b in MetaDefs.booster_ids():
+		if int(owned.get(b, 0)) > 0 and out.size() < MetaDefs.max_loadout():
+			out.append(b)
+	return out
+
 static func league_text(p: Dictionary, now: int) -> String:
 	if p.is_empty():
 		return ""

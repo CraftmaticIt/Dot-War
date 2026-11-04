@@ -147,13 +147,13 @@
     {
       "tick": 160,
       "from": 1002,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
       "tick": 200,
       "from": 1003,
-      "to": 2,
+      "to": 1,
       "percent": 50
     },
     {
@@ -161,112 +161,16 @@
       "from": 1001,
       "to": 3,
       "percent": 50
-    },
-    {
-      "tick": 280,
-      "from": 2,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 320,
-      "from": 1002,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 360,
-      "from": 1003,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 400,
-      "from": 2,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 440,
-      "from": 2,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 480,
-      "from": 1001,
-      "to": 3,
-      "percent": 50
-    },
-    {
-      "tick": 520,
-      "from": 1002,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 560,
-      "from": 1003,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 600,
-      "from": 2,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 640,
-      "from": 1001,
-      "to": 3,
-      "percent": 50
-    },
-    {
-      "tick": 680,
-      "from": 1002,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 720,
-      "from": 1003,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 760,
-      "from": 2,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 800,
-      "from": 1001,
-      "to": 3,
-      "percent": 50
-    },
-    {
-      "tick": 840,
-      "from": 1002,
-      "to": 1,
-      "percent": 50
-    },
-    {
-      "tick": 880,
-      "from": 1003,
-      "to": 1,
-      "percent": 50
     }
   ],
   "expected": {
     "result": {
       "stars": 0,
-      "destroyed_pct": 12,
+      "destroyed_pct": 18,
       "loot": 0,
       "trophies": -8
     },
-    "hash": 3273200150,
+    "hash": 3373844358,
     "ticks": 3600
   }
 }
