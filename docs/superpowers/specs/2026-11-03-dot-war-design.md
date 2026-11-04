@@ -48,6 +48,13 @@ Każdy budynek: 5 poziomów w MVP, koszt Energii + czas budowy.
 - Mur = twardy węzeł (duży garnizon). Pułapka = ukryta; pierwsza wroga grupa traci 10×poziom kropek, potem pusty węzeł.
 - Przeciwnicy do czasu backendu: boty-kolonie generowane wg trofeów (seed → układ).
 
+### Decyzje etapu 4 (właściciel, 2026-11-04)
+
+- Ekonomia: klient wysyła zapis kolonii, serwer odrzuca niemożliwe skoki (limity produkcji od ostatniego zapisu); trofea, ataki i kryształy należą do serwera.
+- Logowanie: anonimowe konto urządzenia; Google/Apple w etapie 7.
+- Przeciwnicy: gracze ±200 trofeów bez tarczy; brak → bot. Tarcza 8 h po porażce obrońcy.
+- Konfiguracja Supabase wyłącznie przez CI (sekrety GitHub); klucze klienta wstrzykiwane przy eksporcie APK.
+
 ## 4. Ekonomia
 
 - **Energia** — z kopalń; budowa/ulepszenia. Łupiona w ataku (max 20% niechronionej).
