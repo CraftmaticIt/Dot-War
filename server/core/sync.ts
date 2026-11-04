@@ -6,10 +6,11 @@ import * as Hex from "../game/hex.ts";
 import { ColonyState, OFFLINE_CAP_SECS, type Cell } from "../game/colony.ts";
 import { idiv } from "../sim/fx.ts";
 import type { Player, Repo } from "./repo.ts";
+import { profile, questEvents, type ProfileView } from "./profile.ts";
 
 export type SyncResult = {
   colony: Record<string, any>; accepted: boolean; reason?: string; error?: string;
-  defenses?: { count: number; loot: number };
+  defenses?: { count: number; loot: number }; profile?: ProfileView;
 };
 
 export const BUILDERS = 2;
@@ -40,7 +41,19 @@ function connected(c: ColonyState): boolean {
 }
 
 /** "" when `c` is reachable from `s` (accepted at `syncedAt`) by `now` under the game rules. */
+/** Crystals the client spent since `s` (speedups). The server copy is authoritative. */
+export const spentCrystals = (s: ColonyState, c: ColonyState) => Math.max(0, s.crystals - c.crystals);
+
+/** Levels finished since `s` (quest event "upgrade"). */
+export function levelsGained(s: ColonyState, c: ColonyState): number {
+  let n = 0;
+  for (const k in c.cells) n += Math.max(0, c.cells[k].level - (s.cells[k]?.level ?? 0));
+  return n;
+}
+
 export function plausible(s: ColonyState, c: ColonyState, p: Player, syncedAt: number, now: number): string {
+  const spent = spentCrystals(s, c);
+  if (spent > p.crystals) return "crystals";
   if (c.cells["0,0"]?.type !== "core" || Object.values(c.cells).filter((x) => x.type === "core").length !== 1) return "core";
   if (Object.keys(c.cells).length > B.maxNodes(c.coreLevel())) return "node_limit";
   if (!connected(c)) return "not_connected";
@@ -78,7 +91,7 @@ export function plausible(s: ColonyState, c: ColonyState, p: Player, syncedAt: n
     eRate += B.energyPerHour(cc.type, t);
     dRate += B.dotsPerHour(cc.type, t);
   }
-  if (required > p.crystals - c.crystals) return "build_time";
+  if (required > spent) return "build_time";
   const eCap = Math.max(s.energyCap(), c.energyCap());
   if (c.energy > Math.max(s.energy, eCap)) return "energy_cap";
   if (value(c) > value(s) + idiv(eRate * window, 3600) + 1) return "energy";
@@ -87,15 +100,21 @@ export function plausible(s: ColonyState, c: ColonyState, p: Player, syncedAt: n
   return "";
 }
 
-export async function syncColony(repo: Repo, uid: string, client: unknown, now: number): Promise<SyncResult> {
+export async function syncColony(repo: Repo, uid: string, client: unknown, now: number,
+  rand: () => number = Math.random): Promise<SyncResult> {
+  const r = await syncCore(repo, uid, client, now, rand);
+  if (!r.error) r.profile = await profile(repo, uid, now);
+  return r;
+}
+
+async function syncCore(repo: Repo, uid: string, client: unknown, now: number, rand: () => number): Promise<SyncResult> {
   const c = ColonyState.fromDict(client);
   if (!c) return { colony: {}, accepted: false, error: "bad_colony" };
   for (let attempt = 0; attempt < CAS_RETRIES; attempt++) {
-    const p = await repo.ensurePlayer(uid);
-    c.crystals = Math.min(c.crystals, p.crystals);  // server-owned: the client may only spend
+    const p = await repo.ensurePlayer(uid, now);
     const open = (await repo.openAttacksBy(uid)).length > 0 ? 1 : 0;
-    const out = (x: ColonyState) => {
-      x.trophies = p.trophies; x.attacks = p.attacks; x.attackOpen = open; x.crystals = Math.min(x.crystals, p.crystals);
+    const out = (x: ColonyState, crystals: number) => {
+      x.trophies = p.trophies; x.attacks = p.attacks; x.attackOpen = open; x.crystals = crystals;
       return x.toDict();
     };
     const st = await repo.getColony(uid);
@@ -103,18 +122,25 @@ export async function syncColony(repo: Repo, uid: string, client: unknown, now: 
     if (!st) {
       // First contact: the upload must be reachable from a fresh colony within one offline window.
       const since = now - OFFLINE_CAP_SECS;
-      const reason = plausible(ColonyState.newDefault(since), c, p, since, now);
+      const base = ColonyState.newDefault(since);
+      base.crystals = p.crystals;
+      const reason = plausible(base, c, p, since, now);
       const adopt = reason ? ColonyState.newDefault(now) : c;
-      if (!(await repo.createColony(uid, out(adopt), now))) continue;
-      if (!reason) await repo.adjustPlayer(uid, 0, 0, null, c.crystals);
-      return { colony: out(adopt), accepted: !reason, reason: reason || undefined, defenses };
+      const spent = reason ? 0 : spentCrystals(base, c);
+      if (!(await repo.createColony(uid, out(adopt, p.crystals - spent), now))) continue;
+      if (spent) await repo.adjustPlayer(uid, 0, 0, null, -spent);
+      return { colony: out(adopt, p.crystals - spent), accepted: !reason, reason: reason || undefined, defenses };
     }
     const s = ColonyState.fromDict(st.data)!;
+    s.crystals = p.crystals;  // the player row is the source of truth for crystals
     const reason = plausible(s, c, p, st.synced_at, now);
-    if (reason) return { colony: out(s), accepted: false, reason, defenses };
-    if (!(await repo.casColony(uid, out(c), now, st.rev))) continue;  // changed meanwhile: re-check
-    await repo.adjustPlayer(uid, 0, 0, null, c.crystals);
-    return { colony: out(c), accepted: true, defenses };
+    if (reason) return { colony: out(s, p.crystals), accepted: false, reason, defenses };
+    const spent = spentCrystals(s, c);
+    if (!(await repo.casColony(uid, out(c, p.crystals - spent), now, st.rev))) continue;  // changed meanwhile: re-check
+    if (spent) await repo.adjustPlayer(uid, 0, 0, null, -spent);
+    const gained = levelsGained(s, c);
+    if (gained > 0) await questEvents(repo, uid, [["upgrade", gained]], now, rand);
+    return { colony: out(c, p.crystals - spent), accepted: true, defenses };
   }
   const st = await repo.getColony(uid);
   const s = st ? ColonyState.fromDict(st.data)! : ColonyState.newDefault(now);

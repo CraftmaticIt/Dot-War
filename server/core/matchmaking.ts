@@ -3,6 +3,7 @@ import { idiv } from "../sim/fx.ts";
 import { ColonyState } from "../game/colony.ts";
 import { BotColony } from "../game/bot_colony.ts";
 import type { AttackRow, Repo } from "./repo.ts";
+import { cleanLoadout, loadoutNeeds } from "../game/meta.ts";
 
 export const RANGE = 200;
 export const MAX_CANDIDATES = 20;
@@ -14,7 +15,7 @@ const ABANDON_RESULT = { stars: 0, destroyed_pct: 0, loot: 0, trophies: ABANDON_
 
 export type FindResult = {
   error?: string; attack_id?: string; snapshot?: any; loot_pool?: number; seed?: number; dots?: number;
-  bot?: { trophies: number; seed: number; practice?: boolean } | null;
+  bot?: { trophies: number; seed: number; practice?: boolean } | null; loadout?: string[];
 };
 
 /** Atomic: only the request that flips open -> abandoned applies the penalty. */
@@ -38,20 +39,26 @@ export function disguise(snapshot: any): any {
 
 /** practice = bot only, no loot/trophies (used by the live smoke test; never touches players). */
 export async function findOpponent(repo: Repo, uid: string, now: number, rand: () => number,
-  newId: () => string = () => crypto.randomUUID(), practice = false): Promise<FindResult> {
+  newId: () => string = () => crypto.randomUUID(), practice = false, rawLoadout: unknown = []): Promise<FindResult> {
   await resolveStale(repo, now);
   for (const a of await repo.openAttacksBy(uid)) await abandon(repo, a.id, now);  // a new attack forfeits the old one
   const p = await repo.getPlayer(uid);
   if (!p || !(await repo.getColony(uid))) return { error: "no_colony" };
+  const loadout = practice ? [] : cleanLoadout(rawLoadout);
+  const need = loadoutNeeds(loadout);
+  if (loadout.length && !(await repo.takeBoosters(uid, need))) return { error: "no_boosters" };  // atomic, all or nothing
   const dots = await repo.consumeDots(uid, MIN_ATTACK_DOTS);  // atomic: parallel finds cannot reuse dots
-  if (dots < 0) return { error: "few_dots" };
+  if (dots < 0) {
+    if (loadout.length) await repo.grant(uid, 0, need);  // refund the boosters
+    return { error: "few_dots" };
+  }
 
   const cands = practice ? [] : await repo.candidates(p.trophies - RANGE, p.trophies + RANGE, uid, now, MAX_CANDIDATES);
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [cands[i], cands[j]] = [cands[j], cands[i]];
   }
-  const base = { attacker: uid, dots, status: "open" as const, commands: null, result: null, created_at: now, finished_at: null };
+  const base = { attacker: uid, dots, status: "open" as const, commands: null, result: null, created_at: now, finished_at: null, loadout };
   let row: AttackRow | null = null;
   for (const d of cands) {
     const col = await repo.getColony(d);
@@ -70,5 +77,5 @@ export async function findOpponent(repo: Repo, uid: string, now: number, rand: (
   }
   await repo.adjustPlayer(uid, 0, 1, null);
   return { attack_id: row.id, snapshot: disguise(row.snapshot), loot_pool: row.loot_pool, seed: row.seed,
-    dots: row.dots, bot: row.bot };
+    dots: row.dots, bot: row.bot, loadout };
 }

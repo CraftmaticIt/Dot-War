@@ -2,6 +2,8 @@
 // Each method is one atomic statement or SQL function (see migrations/*_atomic_ops.sql).
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.45.4";
 import type { AttackRow, ColonyRow, Player, Repo } from "./server/core/repo.ts";
+import type { QuestState } from "./server/game/meta.ts";
+import { DEFS, seasonIndex } from "./server/game/meta.ts";
 import type { Deps } from "./server/http/handlers.ts";
 
 const sec = (iso: string | null): number | null => (iso ? Math.floor(Date.parse(iso) / 1000) : null);
@@ -11,7 +13,8 @@ const LIVE = "(open,settling)";
 
 const toAttack = (r: any): AttackRow => ({ ...r, created_at: sec(r.created_at)!, finished_at: sec(r.finished_at) });
 const toPlayer = (d: any): Player => ({ id: d.id, trophies: d.trophies, attacks: d.attacks, crystals: d.crystals,
-  shield_until: sec(d.shield_until) });
+  shield_until: sec(d.shield_until), boosters: d.boosters ?? {}, season: d.season ?? 0, quests: d.quests ?? null,
+  quests_rev: d.quests_rev ?? 0, last_reward: d.last_reward ?? null });
 function check(error: any): void { if (error) throw error; }
 
 export class SupaRepo implements Repo {
@@ -23,15 +26,41 @@ export class SupaRepo implements Repo {
     check(error);
     return data ? toPlayer(data) : null;
   }
-  async ensurePlayer(id: string) {
-    const { error } = await this.db.from("players").upsert({ id }, { onConflict: "id", ignoreDuplicates: true });
+  async ensurePlayer(id: string, now: number) {
+    const { error } = await this.db.from("players").upsert({ id, season: seasonIndex(now), boosters: DEFS.start_boosters },
+      { onConflict: "id", ignoreDuplicates: true });
     check(error);
     return (await this.getPlayer(id))!;
   }
-  async adjustPlayer(id: string, dT: number, dA: number, shield: number | null, crystalsMax?: number) {
+  async adjustPlayer(id: string, dT: number, dA: number, shield: number | null, dCrystals = 0) {
     const { error } = await this.db.rpc("adjust_player", { p_id: id, p_dtrophies: dT, p_dattacks: dA,
-      p_shield: iso(shield), p_crystals_max: crystalsMax ?? null });
+      p_shield: iso(shield), p_dcrystals: dCrystals });
     check(error);
+  }
+  async takeBoosters(id: string, need: Record<string, number>) {
+    const { data, error } = await this.db.rpc("take_boosters", { p_id: id, p_need: need });
+    check(error);
+    return data === true;
+  }
+  async grant(id: string, crystals: number, boosters: Record<string, number>) {
+    const { error } = await this.db.rpc("grant_items", { p_id: id, p_crystals: crystals, p_boosters: boosters });
+    check(error);
+  }
+  async buy(id: string, item: string, price: number) {
+    const { data, error } = await this.db.rpc("buy_booster", { p_id: id, p_item: item, p_price: price });
+    check(error);
+    return data === true;
+  }
+  async settleSeason(id: string, season: number, reward: number, info: any) {
+    const { data, error } = await this.db.rpc("settle_season", { p_id: id, p_season: season, p_reward: reward,
+      p_reset_above: DEFS.season.reset_above, p_info: info });
+    check(error);
+    return data === true;
+  }
+  async setQuests(id: string, quests: QuestState, rev: number) {
+    const { data, error } = await this.db.rpc("set_quests", { p_id: id, p_quests: quests, p_rev: rev });
+    check(error);
+    return data === true;
   }
   async getColony(id: string): Promise<ColonyRow | null> {
     const { data, error } = await this.db.from("colonies").select("data, synced_at, rev").eq("player_id", id).maybeSingle();

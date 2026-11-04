@@ -3,22 +3,37 @@
 // concurrent requests cannot double-settle or overwrite each other's changes.
 // MemoryRepo mirrors that: no await inside a method body.
 
-export type Player = { id: string; trophies: number; attacks: number; crystals: number; shield_until: number | null };
+import { DEFS, seasonIndex, type QuestState } from "../game/meta.ts";
+
+export type Player = {
+  id: string; trophies: number; attacks: number; crystals: number; shield_until: number | null;
+  boosters: Record<string, number>; season: number; quests: QuestState | null; quests_rev: number; last_reward: any;
+};
 export type ColonyRow = { data: any; synced_at: number; rev: number };
 export type AttackStatus = "open" | "settling" | "done" | "abandoned";
 export type AttackRow = {
   id: string; attacker: string; defender: string | null; bot: { trophies: number; seed: number; practice?: boolean } | null;
   snapshot: any; dots: number; seed: number; loot_pool: number; status: AttackStatus;
-  commands: any; result: any; created_at: number; finished_at: number | null;
+  commands: any; result: any; created_at: number; finished_at: number | null; loadout?: string[];
 };
 
 export interface Repo {
   getPlayer(id: string): Promise<Player | null>;
-  /** Creates the default player row if missing; returns the current row. */
-  ensurePlayer(id: string): Promise<Player>;
+  /** Creates the default player row if missing (season = current); returns the row. */
+  ensurePlayer(id: string, now: number): Promise<Player>;
   /** trophies = max(0, trophies + dTrophies); attacks += dAttacks; shield set when given;
-   *  crystals = min(crystals, crystalsMax) when given. */
-  adjustPlayer(id: string, dTrophies: number, dAttacks: number, shieldUntil: number | null, crystalsMax?: number): Promise<void>;
+   *  crystals = max(0, crystals + dCrystals). Every crystals change is mirrored into
+   *  colonies.data.crystals (rev bumped) so the colony copy never disagrees. */
+  adjustPlayer(id: string, dTrophies: number, dAttacks: number, shieldUntil: number | null, dCrystals?: number): Promise<void>;
+  /** All-or-nothing: subtract `need` from boosters if every count suffices. */
+  takeBoosters(id: string, need: Record<string, number>): Promise<boolean>;
+  grant(id: string, crystals: number, boosters: Record<string, number>): Promise<void>;
+  /** crystals -= price and boosters[item] += 1 only if crystals >= price. */
+  buy(id: string, item: string, price: number): Promise<boolean>;
+  /** Only when player.season < season: + reward crystals, soft trophy reset, season = season. */
+  settleSeason(id: string, season: number, reward: number, info: any): Promise<boolean>;
+  /** Replace quests if quests_rev is unchanged (bumps it). */
+  setQuests(id: string, quests: QuestState, rev: number): Promise<boolean>;
   getColony(id: string): Promise<ColonyRow | null>;
   /** Insert only if absent. */
   createColony(id: string, data: any, syncedAt: number): Promise<boolean>;
@@ -55,23 +70,71 @@ export class MemoryRepo implements Repo {
   newId(): string { return `a${this.nextId++}`; }
 
   /** Test helper: player + colony rows in one go. */
-  seed(id: string, p: Omit<Player, "id">, data: any, syncedAt: number): void {
-    this.players.set(id, { id, ...p });
+  seed(id: string, p: Partial<Omit<Player, "id">>, data: any, syncedAt: number): void {
+    const full: Player = { id, trophies: 0, attacks: 0, crystals: 50, shield_until: null, boosters: { ...DEFS.start_boosters },
+      season: seasonIndex(syncedAt), quests: null, quests_rev: 0, last_reward: null, ...p };
+    this.players.set(id, full);
     this.colonies.set(id, { data: clone(data), synced_at: syncedAt, rev: 0 });
   }
-
-  async getPlayer(id: string) { const p = this.players.get(id); return p ? { ...p } : null; }
-  async ensurePlayer(id: string) {
-    if (!this.players.has(id)) this.players.set(id, { id, trophies: 0, attacks: 0, crystals: 50, shield_until: null });
-    return { ...this.players.get(id)! };
+  private mirror(id: string): void {
+    const c = this.colonies.get(id), p = this.players.get(id);
+    if (c && p) { c.data.crystals = p.crystals; c.rev += 1; }
   }
-  async adjustPlayer(id: string, dT: number, dA: number, shield: number | null, crystalsMax?: number) {
+
+
+  async getPlayer(id: string) { const p = this.players.get(id); return p ? clone(p) : null; }
+  async ensurePlayer(id: string, now: number) {
+    if (!this.players.has(id)) {
+      this.players.set(id, { id, trophies: 0, attacks: 0, crystals: 50, shield_until: null, boosters: { ...DEFS.start_boosters },
+        season: seasonIndex(now), quests: null, quests_rev: 0, last_reward: null });
+    }
+    return clone(this.players.get(id)!);
+  }
+  async adjustPlayer(id: string, dT: number, dA: number, shield: number | null, dCrystals = 0) {
     const p = this.players.get(id);
     if (!p) return;
     p.trophies = Math.max(0, p.trophies + dT);
     p.attacks += dA;
     if (shield !== null) p.shield_until = shield;
-    if (crystalsMax !== undefined) p.crystals = Math.min(p.crystals, crystalsMax);
+    if (dCrystals !== 0) { p.crystals = Math.max(0, p.crystals + dCrystals); this.mirror(id); }
+  }
+  async takeBoosters(id: string, need: Record<string, number>) {
+    const p = this.players.get(id);
+    if (!p || Object.entries(need).some(([k, n]) => (p.boosters[k] ?? 0) < n)) return false;
+    for (const [k, n] of Object.entries(need)) p.boosters[k] -= n;
+    return true;
+  }
+  async grant(id: string, crystals: number, boosters: Record<string, number>) {
+    const p = this.players.get(id);
+    if (!p) return;
+    for (const [k, n] of Object.entries(boosters)) p.boosters[k] = (p.boosters[k] ?? 0) + n;
+    if (crystals !== 0) { p.crystals = Math.max(0, p.crystals + crystals); this.mirror(id); }
+  }
+  async buy(id: string, item: string, price: number) {
+    const p = this.players.get(id);
+    if (!p || p.crystals < price) return false;
+    p.crystals -= price;
+    p.boosters[item] = (p.boosters[item] ?? 0) + 1;
+    this.mirror(id);
+    return true;
+  }
+  async settleSeason(id: string, season: number, reward: number, info: any) {
+    const p = this.players.get(id);
+    if (!p || p.season >= season) return false;
+    p.season = season;
+    p.crystals += reward;
+    const a = DEFS.season.reset_above;
+    if (p.trophies > a) p.trophies = a + Math.trunc((p.trophies - a) / 2);
+    p.last_reward = clone(info);
+    this.mirror(id);
+    return true;
+  }
+  async setQuests(id: string, quests: QuestState, rev: number) {
+    const p = this.players.get(id);
+    if (!p || p.quests_rev !== rev) return false;
+    p.quests = clone(quests);
+    p.quests_rev = rev + 1;
+    return true;
   }
   async getColony(id: string) { const c = this.colonies.get(id); return c ? clone(c) : null; }
   async createColony(id: string, data: any, syncedAt: number) {
