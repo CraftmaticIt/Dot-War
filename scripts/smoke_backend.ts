@@ -27,6 +27,17 @@ const tok = su.data.access_token;
 const now = Math.floor(Date.now() / 1000);
 const s = await call("/functions/v1/sync_colony", { colony: ColonyState.newDefault(now).toDict() }, tok);
 expect(s.status === 200 && s.data.accepted === true, "sync_colony accepts first upload", s);
+const pr = s.data.profile;
+expect(!!pr && pr.quests?.length === 3 && pr.boosters?.split === 1 && typeof pr.league_name === "string",
+  "profile: 3 daily quests, start boosters, league", pr);
+const b1 = await call("/functions/v1/shop_buy", { item: "split" }, tok);
+const b2 = await call("/functions/v1/shop_buy", { item: "split" }, tok);
+const b3 = await call("/functions/v1/shop_buy", { item: "split" }, tok);
+expect(b1.status === 200 && b2.status === 200 && b3.status === 409 && b3.data.error === "no_crystals",
+  "shop: 50 crystals buy two 25-crystal boosters, third refused", [b1.status, b2.status, b3.data]);
+expect(b2.data.profile?.boosters?.split === 3 && b2.data.profile?.crystals === 0, "shop updates inventory and crystals", b2.data);
+const nb = await call("/functions/v1/find_opponent", { loadout: ["emp", "emp"] }, tok);
+expect(nb.status === 409 && nb.data.error === "no_boosters", "loadout beyond inventory refused before matchmaking", nb);
 const f = await call("/functions/v1/find_opponent", {}, tok);
 expect(f.status === 409 && f.data.error === "few_dots", "find_opponent refuses with 0 dots", f);
 const x = await call("/functions/v1/finish_attack", { attack_id: "00000000-0000-0000-0000-000000000000", commands: [] }, tok);
