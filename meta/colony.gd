@@ -23,7 +23,9 @@ static func new_default(now: int) -> ColonyState:
 	var c := ColonyState.new()
 	c.cells[Hex.key(0, 0)] = _cell("core", 1)
 	c.cells[Hex.key(1, 0)] = _cell("mine", 1)
-	c.energy = 500
+	c.cells[Hex.key(0, 1)] = _cell("generator", 1)
+	c.energy = 1000
+	c.dots = 50
 	c.crystals = 50
 	c.last_collect = now
 	return c

@@ -7,6 +7,17 @@ const GRID_RADIUS := 4
 const PLAYER := Color("#00E5FF")
 const NAMES := {"core": "Rdzeń", "mine": "Kopalnia", "storage": "Magazyn", "generator": "Generator",
 	"laser": "Laser", "pulse": "Puls", "wall": "Ściana", "trap": "Pułapka"}
+## What each building is for (shown in the build menu and the building panel).
+const INFO := {
+	"core": "Serce kolonii. Jego poziom podnosi limit węzłów i maks. poziom budynków. Gdy padnie, wróg dostaje gwiazdkę.",
+	"mine": "Produkuje energię – za nią budujesz i ulepszasz.",
+	"storage": "Podnosi limit energii. Gdy energia dojdzie do limitu, kopalnie stają.",
+	"generator": "Produkuje kropki – Twoją armię do ataku. Ma własny limit kropek.",
+	"laser": "Wieża obrony: strzela w jedną wrogą grupę, duży zasięg.",
+	"pulse": "Wieża obrony: rani wszystkie wrogie grupy obok siebie, krótki zasięg.",
+	"wall": "Twardy węzeł z dużym garnizonem – wróg musi się przez niego przebić.",
+	"trap": "Ukryta przed wrogiem mina: zabija kropki pierwszej wrogiej grupy, potem znika.",
+}
 const LETTERS := {"core": "C", "mine": "M", "storage": "S", "generator": "G",
 	"laser": "L", "pulse": "P", "wall": "W", "trap": "T"}
 
@@ -75,23 +86,20 @@ static func crystals_word(n: int) -> String:
 		return "kryształy"
 	return "kryształów"
 
+## Numbers for this level.
 static func describe(type: String, level: int) -> String:
 	match type:
 		"mine":
 			return "+%d energii/h" % Buildings.energy_per_hour(type, level)
 		"generator":
 			return "+%d kropek/h, limit %d" % [Buildings.dots_per_hour(type, level), Buildings.dots_cap(type, level)]
-		"storage", "core":
+		"storage":
 			return "magazyn +%d" % Buildings.energy_cap(type, level)
-		"laser":
-			return "wieża: pojedynczy cel, duży zasięg"
-		"pulse":
-			return "wieża: obszarowa, krótki zasięg"
-		"wall":
-			return "spowalnia i kieruje rój"
+		"core":
+			return "magazyn +%d, limit węzłów %d" % [Buildings.energy_cap(type, level), Buildings.max_nodes(level)]
 		"trap":
-			return "ukryta mina, jednorazowa"
-	return ""
+			return "zabija %d kropek" % Buildings.trap_dmg(type, level)
+	return "garnizon %d" % Buildings.garrison(type, level)
 
 # --- scene ---
 
@@ -105,9 +113,9 @@ func _ready() -> void:
 	if i != -1 and i + 1 < args.size():
 		_shot = args[i + 1]
 		colony = ColonyState.new_default(_now())
-		colony.place("generator", 0, 1, _now())
+		colony.place("storage", -1, 1, _now())
 		colony.place("laser", -1, 0, _now())
-		selected = Vector2i(0, 1)
+		selected = Vector2i(-1, 1)
 		if args.has("--meta"):
 			_open_meta_on_ready = true
 	elif colony == null:
@@ -175,7 +183,7 @@ func _build_ui() -> void:
 	add_child(layer)
 	_hud = Label.new()
 	_hud.position = Vector2(16, 12)
-	_hud.add_theme_font_size_override("font_size", 22)
+	_hud.add_theme_font_size_override("font_size", 20)
 	layer.add_child(_hud)
 	var attack := Button.new()
 	attack.text = "Atak"
@@ -202,7 +210,7 @@ func _build_ui() -> void:
 		get_tree().change_scene_to_file("res://game/prototype.tscn"))
 	layer.add_child(training)
 	_panel = VBoxContainer.new()
-	_panel.position = Vector2(16, 70)
+	_panel.position = Vector2(16, 80)
 	_panel.custom_minimum_size = Vector2(300, 0)
 	layer.add_child(_panel)
 	_toast = Label.new()
@@ -364,9 +372,10 @@ func _update_dynamic(now: int) -> void:
 	var net := "" if backend == null or not backend.is_configured() else ("● online    " if backend.online else "○ offline    ")
 	if backend != null and not backend.profile.is_empty():
 		net += MetaPanel.league_text(backend.profile, now) + "    "
-	_hud.text = net + "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Trofea %d" % [
+	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Węzły %d/%d    Trofea %d" % [
 		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
-		colony.busy_builders(now), ColonyState.BUILDERS, colony.trophies]
+		colony.busy_builders(now), ColonyState.BUILDERS, colony.cells.size(), Buildings.max_nodes(colony.core_level()),
+		colony.trophies] + ("" if net == "" else "\n" + net.strip_edges())
 	var k := Hex.key(selected.x, selected.y)
 	if _timer_label != null and colony.cells.has(k):
 		var cell: Dictionary = colony.cells[k]
@@ -392,6 +401,11 @@ func _rebuild_panel(now: int) -> void:
 	else:
 		_panel_build_menu(now)
 
+func _info(text: String) -> void:
+	var l := _label(text, 14, Color(1, 1, 1, 0.6))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(300, 0)
+
 func _label(text: String, size := 18, color := Color.WHITE) -> Label:
 	var l := Label.new()
 	l.text = text
@@ -415,6 +429,7 @@ func _panel_building(cell: Dictionary, now: int) -> void:
 	var q := selected.x
 	var r := selected.y
 	_label("%s  poz. %d" % [NAMES[cell.type], cell.level], 22, PLAYER)
+	_info(INFO[cell.type])
 	if cell.level > 0:
 		_label(describe(cell.type, cell.level))
 	if cell.build_end > now:
@@ -446,10 +461,11 @@ func _panel_build_menu(now: int) -> void:
 			return ["%s: %d energii, %s" % [NAMES[type], Buildings.cost(type, 1), format_secs(Buildings.build_secs(type, 1))],
 				_err_text(colony.can_place(type, q, r, t))],
 			func(): _act(colony.place(type, q, r, _now())))
+		_info(INFO[type])
 
 static func _err_text(code: String) -> String:
 	return {"": "", "no_energy": "brak energii", "no_builder": "brak budowniczych",
-		"node_limit": "limit węzłów", "core_limit": "ulepsz Rdzeń", "max_level": "maks. poziom",
+		"node_limit": "limit węzłów – ulepsz Rdzeń", "core_limit": "ulepsz Rdzeń", "max_level": "maks. poziom",
 		"busy": "w budowie", "occupied": "zajęte", "not_adjacent": "za daleko", "out_of_grid": "poza mapą"}.get(code, code)
 
 func _act(err: String) -> void:

@@ -36,7 +36,9 @@ export class ColonyState {
     const c = new ColonyState();
     c.cells[Hex.key(0, 0)] = { type: "core", level: 1, build_end: 0, target_level: 1 };
     c.cells[Hex.key(1, 0)] = { type: "mine", level: 1, build_end: 0, target_level: 1 };
-    c.energy = 500;
+    c.cells[Hex.key(0, 1)] = { type: "generator", level: 1, build_end: 0, target_level: 1 };
+    c.energy = 1000;
+    c.dots = 50;
     c.crystals = 50;
     c.lastCollect = now;
     return c;

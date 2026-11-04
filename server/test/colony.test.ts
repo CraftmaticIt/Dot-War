@@ -4,25 +4,31 @@ import assert from "node:assert/strict";
 import { ColonyState } from "../game/colony.ts";
 
 const T0 = 1_800_000_000, H = 3600;
-const fresh = () => ColonyState.newDefault(T0);
+// Mine-only colony (default minus its starter generator) so these tests see mine accrual alone.
+const fresh = () => {
+  const c = ColonyState.newDefault(T0);
+  delete c.cells["0,1"];
+  c.energy = 500; c.dots = 0;
+  return c;
+};
 
 test("one hour mine lvl1", () => {
   const c = fresh();
-  assert.deepEqual(c.collect(T0 + H), { energy: 100, dots: 0, secs: H });
-  assert.equal(c.energy, 600);
+  assert.deepEqual(c.collect(T0 + H), { energy: 500, dots: 0, secs: H });
+  assert.equal(c.energy, 1000);
 });
 
 test("remainder carried across 1s collects", () => {
   const c = fresh();
   for (let i = 1; i <= H; i++) c.collect(T0 + i);
-  assert.equal(c.energy, 600);
+  assert.equal(c.energy, 1000);
 });
 
 test("offline cap 8h", () => {
   const c = fresh();
   c.cells["0,1"] = { type: "storage", level: 1, build_end: 0, target_level: 1 };
   assert.equal(c.collect(T0 + 24 * H).secs, 8 * H);
-  assert.equal(c.energy, 1300);
+  assert.equal(c.energy, 3500); // cap: core 2000 + storage 1500
 });
 
 test("clock backwards", () => {
@@ -37,14 +43,14 @@ test("build finishing mid window", () => {
   c.energy = 700;
   c.cells["1,0"] = { type: "mine", level: 1, build_end: T0 + 1800, target_level: 2 };
   c.collect(T0 + H);
-  assert.equal(c.energy, 850);
+  assert.equal(c.energy, 700 + 250 + 500);
   assert.equal(c.cells["1,0"].level, 2);
 });
 
 test("storage cap clamps, stock above cap kept", () => {
   const c = fresh();
   c.collect(T0 + 8 * H);
-  assert.equal(c.energy, 1000);
+  assert.equal(c.energy, 2000);
   const d = fresh();
   d.energy = 5000;
   d.collect(T0 + H);

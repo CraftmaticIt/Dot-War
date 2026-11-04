@@ -8,10 +8,10 @@ func _view() -> Node2D:
 	var v: Node2D = CV.new()
 	var now := int(Time.get_unix_time_from_system())
 	v.colony = ColonyState.new_default(now)
-	v.colony.place("generator", 0, 1, now)
+	v.colony.place("laser", -1, 0, now)  # 30 s build: still running after the -5 s tweak
 	v.save_enabled = false
 	add_child_autofree(v)
-	v.select(Vector2i(0, 1))
+	v.select(Vector2i(-1, 0))
 	return v
 
 func test_tick_keeps_panel_buttons():
@@ -22,16 +22,16 @@ func test_tick_keeps_panel_buttons():
 
 func test_tick_updates_countdown_label():
 	var v := _view()
-	v.colony.cells["0,1"].build_end += 0  # unchanged
+	v.colony.cells["-1,0"].build_end += 0  # unchanged
 	var lbl: Label = v.timer_label()
 	assert_not_null(lbl)
-	v.colony.cells["0,1"].build_end -= 5
+	v.colony.cells["-1,0"].build_end -= 5
 	v.on_second()
-	assert_string_contains(lbl.text, "%ds" % (v.colony.cells["0,1"].build_end - int(Time.get_unix_time_from_system())))
+	assert_string_contains(lbl.text, "%ds" % (v.colony.cells["-1,0"].build_end - int(Time.get_unix_time_from_system())))
 
 func test_finished_build_rebuilds_panel():
 	var v := _view()
 	var before: Array = v.panel_nodes()
-	v.colony.cells["0,1"].build_end = int(Time.get_unix_time_from_system()) - 1
+	v.colony.cells["-1,0"].build_end = int(Time.get_unix_time_from_system()) - 1
 	v.on_second()
 	assert_ne(v.panel_nodes(), before, "structure changed -> rebuilt")

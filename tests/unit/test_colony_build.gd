@@ -2,17 +2,24 @@ extends GutTest
 
 const T0 := 1_800_000_000
 
+## Mine-only colony (the default minus its starter generator), the layout these tests were written for.
 func _c() -> ColonyState:
-	return ColonyState.new_default(T0)
+	var c := ColonyState.new_default(T0)
+	c.cells.erase("0,1")
+	c.energy = 500
+	c.dots = 0
+	return c
 
 func _snapshot(c: ColonyState) -> Dictionary:
 	return {"cells": c.cells.duplicate(true), "energy": c.energy, "crystals": c.crystals}
 
 func test_default_state():
-	var c := _c()
-	assert_eq(c.energy, 500)
+	var c := ColonyState.new_default(T0)
+	assert_eq(c.energy, 1000)
 	assert_eq(c.crystals, 50)
-	assert_eq(c.dots, 0)
+	assert_eq(c.dots, 50, "enough for the first attack right away")
+	assert_eq(c.cells["0,1"].type, "generator")
+	assert_eq(c.cells["0,1"].level, 1)
 	assert_eq(c.cells["0,0"].type, "core")
 	assert_eq(c.cells["0,0"].level, 1)
 	assert_eq(c.cells["1,0"].type, "mine")
@@ -48,9 +55,9 @@ func test_place_errors():
 func test_node_limit():
 	var c := _c()
 	c.energy = 100000
-	for k in ["0,1", "-1,0", "0,-1", "-1,1"]:
+	for k in ["0,1", "-1,0", "0,-1", "-1,1", "1,1", "2,0"]:
 		c.cells[k] = {"type": "wall", "level": 1, "build_end": 0, "target_level": 1}
-	assert_eq(c.cells.size(), 6)
+	assert_eq(c.cells.size(), 8)
 	_expect_place_error(c, "wall", 1, -1, "node_limit")
 
 func test_third_build_needs_free_builder():

@@ -12,7 +12,7 @@ func test_bad_keys_skipped_and_cannot_replace_core():
 	d.cells["01,0"] = {"type": "wall", "level": 1, "build_end": 0, "target_level": 1}
 	var c := ColonyState.from_dict(d)
 	assert_eq(c.cells["0,0"].level, 1)
-	assert_eq(c.cells.size(), 2)
+	assert_eq(c.cells.size(), 3, "core, mine, generator")
 
 func test_non_numeric_fields_skip_cell_or_zero():
 	var d := _base()

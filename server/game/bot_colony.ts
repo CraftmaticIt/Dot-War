@@ -5,6 +5,9 @@ import { idiv } from "../sim/fx.ts";
 import { SimRng } from "../sim/rng.ts";
 import { ColonyState, GRID_RADIUS, hexDistance } from "./colony.ts";
 
+/** Bot size per core level, frozen at the pre-balance node limits (keeps battle vectors). */
+const BOT_NODES = [6, 9, 12, 16, 20];
+
 const WEIGHTED = ["mine", "mine", "mine", "storage", "generator", "laser", "laser", "pulse", "pulse", "wall", "wall", "trap"];
 
 export const BotColony = {
@@ -13,7 +16,7 @@ export const BotColony = {
     const coreLevel = Math.min(Math.max(1 + idiv(trophies, 200), 1), B.MAX_LEVEL);
     const c = new ColonyState();
     c.cells[Hex.key(0, 0)] = { type: "core", level: coreLevel, build_end: 0, target_level: coreLevel };
-    const count = B.maxNodes(coreLevel) - rng.rangeI(3);
+    const count = BOT_NODES[coreLevel - 1] - rng.rangeI(3);
     while (Object.keys(c.cells).length < count) {
       const cand = candidates(c);
       const [q, r] = cand[rng.rangeI(cand.length)];

@@ -85,9 +85,9 @@ test("C4: dots and energy capped by storage", async () => {
   c.dots = 480;  // 8 h of a lvl1 generator, cap 50
   assert.equal((await syncColony(repo, "u", c.toDict(), T0 + 8 * H)).accepted, false);
   c.dots = 50;
-  c.energy = 1300; // cap 1000
+  c.energy = 2300; // cap 2000
   assert.equal((await syncColony(repo, "u", c.toDict(), T0 + 8 * H)).accepted, false);
-  c.energy = 1000;
+  c.energy = 2000;
   assert.equal((await syncColony(repo, "u", c.toDict(), T0 + 8 * H)).accepted, true);
 });
 
@@ -101,7 +101,7 @@ test("C5: first upload must be plausible from a fresh colony", async () => {
   assert.equal(r.accepted, false);
   assert.equal(r.colony.cells["0,0"].level, 1, "server starts the account from the default colony");
   const ok = ColonyState.newDefault(T0);
-  ok.cells["0,1"] = { type: "generator", level: 0, build_end: T0 + 20, target_level: 1 };
+  ok.cells["-1,0"] = { type: "generator", level: 0, build_end: T0 + 20, target_level: 1 };
   ok.energy -= 200;
   assert.equal((await syncColony(repo, "new2", ok.toDict(), T0)).accepted, true);
 });

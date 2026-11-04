@@ -26,7 +26,9 @@ test("405 on GET, 400 on bad json", async () => {
 
 test("sync 200 then find few_dots 409, finish unknown 404", async () => {
   const d = deps();
-  const s = await handleSync(req({ colony: ColonyState.newDefault(T0).toDict() }), d);
+  const fresh = ColonyState.newDefault(T0);
+  fresh.dots = 0;
+  const s = await handleSync(req({ colony: fresh.toDict() }), d);
   assert.equal(s.status, 200);
   assert.equal((await s.json()).accepted, true);
   const f = await handleFind(req({}), d);

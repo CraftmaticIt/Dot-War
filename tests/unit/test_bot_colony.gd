@@ -29,7 +29,7 @@ func test_bot_connected():
 func test_bot_within_node_limit():
 	for seed in 20:
 		var c: ColonyState = BotColony.generate(seed * 50, seed).colony
-		var lim := Buildings.max_nodes(c.core_level())
+		var lim: int = BotColony.NODES[c.core_level() - 1]
 		assert_between(c.cells.size(), lim - 2, lim)
 		for k in c.cells:
 			assert_between(c.cells[k].level, 1, c.core_level())

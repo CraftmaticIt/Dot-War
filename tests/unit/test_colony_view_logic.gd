@@ -27,9 +27,14 @@ func test_format_secs():
 	assert_eq(CV.format_secs(0), "0s")
 
 func test_describe():
-	assert_eq(CV.describe("mine", 1), "+100 energii/h")
-	assert_eq(CV.describe("generator", 2), "+120 kropek/h, limit 80")
+	assert_eq(CV.describe("mine", 1), "+500 energii/h")
+	assert_eq(CV.describe("generator", 2), "+600 kropek/h, limit 80")
 	assert_eq(CV.describe("storage", 1), "magazyn +1500")
+	assert_eq(CV.describe("core", 1), "magazyn +2000, limit węzłów 8")
+	assert_eq(CV.describe("trap", 2), "zabija 20 kropek")
+	assert_eq(CV.describe("wall", 1), "garnizon 25")
+	for t in Buildings.TYPES:
+		assert_true(CV.INFO.has(t), "every building has a description: " + t)
 
 func test_crystals_word():
 	assert_eq(CV.crystals_word(1), "kryształ")
