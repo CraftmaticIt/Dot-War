@@ -55,6 +55,12 @@ Każdy budynek: 5 poziomów w MVP, koszt Energii + czas budowy.
 - Przeciwnicy: gracze ±200 trofeów bez tarczy; brak → bot. Tarcza 8 h po porażce obrońcy.
 - Konfiguracja Supabase wyłącznie przez CI (sekrety GitHub); klucze klienta wstrzykiwane przy eksporcie APK.
 
+### Decyzje etapu 5 (właściciel, 2026-11-04)
+
+- Boostery celowane w węzeł: Szał/Tarcza/Rozszczepienie działają na grupy gracza lecące do wskazanego węzła, EMP wyłącza wrogie wieże w promieniu węzła. Max 3 na atak (z wybranego przed atakiem zestawu).
+- Źródła boosterów: zadania dzienne, skrzynki, sklep za Kryształy.
+- Liga: progi trofeów (Brąz/Srebro/Złoto/Platyna/Diament), sezon 14 dni, nagroda w Kryształach za ligę, miękki reset (nadwyżka ponad 1000 trofeów o połowę); rozliczenie leniwe przy pierwszym żądaniu po końcu sezonu.
+
 ## 4. Ekonomia
 
 - **Energia** — z kopalń; budowa/ulepszenia. Łupiona w ataku (max 20% niechronionej).
