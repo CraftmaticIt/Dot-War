@@ -4,9 +4,13 @@ config_version=5
 [application]
 
 config/name="Dot War"
-run/main_scene="res://game/colony_view.tscn"
+run/main_scene="res://game/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/quit_on_go_back=false
+
+[autoload]
+
+Sfx="*res://game/sfx.gd"
 
 [display]
 

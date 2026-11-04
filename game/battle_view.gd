@@ -112,6 +112,7 @@ func send_cmd(from: int, to: int, pct: int) -> void:
 		pct = 100  # a small node would send nothing at this %: send what it has
 	commands.append({"tick": battle.world.tick, "from": from, "to": to, "percent": pct})
 	battle.send(from, to, pct)
+	_sfx("send")
 
 var _confirm_left := 0.0
 
@@ -261,6 +262,8 @@ func _process(delta: float) -> void:
 				if not cmd.is_empty():
 					send_cmd(cmd.from, cmd.to, cmd.percent)
 			battle.step()
+			for e in battle.world.events:
+				_sfx(EVENT_SOUNDS.get(e.type, ""))
 		renderer.sync(battle.world, _acc / dt)
 		for v in views:
 			v.refresh(_visible_node(battle.world.graph.node(v.node_id)))
@@ -313,6 +316,15 @@ func _apply_once(r: Dictionary) -> Dictionary:
 		_save_failed = true
 	return r
 
+const EVENT_SOUNDS := {"group_destroyed": "hit", "node_captured": "capture", "boost_applied": "boost",
+	"trap_triggered": "hit"}
+
+## Sounds go through the Sfx autoload when it is running (it is absent in headless tests).
+func _sfx(sound: String) -> void:
+	var s := get_node_or_null("/root/Sfx")
+	if s and sound != "":
+		s.play(sound)
+
 func _show_end() -> void:
 	if _end.visible:
 		return
@@ -323,6 +335,7 @@ func _show_end() -> void:
 	_end.add_child(wait)
 	var r: Dictionary = await _apply_once(battle.result())
 	wait.queue_free()
+	_sfx("win" if r.stars > 0 else "lose")
 	for q in _rewards.get("quests", []):
 		var ql := Label.new()
 		ql.text = "Zadanie ukończone: %s" % q

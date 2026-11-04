@@ -209,6 +209,14 @@ func _build_ui() -> void:
 		_save()
 		get_tree().change_scene_to_file("res://game/prototype.tscn"))
 	layer.add_child(training)
+	var menu := Button.new()
+	menu.text = "Menu"
+	menu.custom_minimum_size = Vector2(120, 48)
+	menu.position = Vector2(1016, 668)
+	menu.pressed.connect(func():
+		_save()
+		get_tree().change_scene_to_file("res://game/main_menu.tscn"))
+	layer.add_child(menu)
 	_panel = VBoxContainer.new()
 	_panel.position = Vector2(16, 80)
 	_panel.custom_minimum_size = Vector2(300, 0)
@@ -468,7 +476,14 @@ static func _err_text(code: String) -> String:
 		"node_limit": "limit węzłów – ulepsz Rdzeń", "core_limit": "ulepsz Rdzeń", "max_level": "maks. poziom",
 		"busy": "w budowie", "occupied": "zajęte", "not_adjacent": "za daleko", "out_of_grid": "poza mapą"}.get(code, code)
 
+## Sounds go through the Sfx autoload when it is running (it is absent in headless tests).
+func _sfx(sound: String) -> void:
+	var s := get_node_or_null("/root/Sfx")
+	if s:
+		s.play(sound)
+
 func _act(err: String) -> void:
+	_sfx("error" if err != "" else "build")
 	if err != "":
 		_show_toast(_err_text(err))
 	_save()
