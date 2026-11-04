@@ -33,3 +33,6 @@ mkdir -p "$ROOT/build"
 "$ROOT/.tools/godot" --headless --path "$ROOT" --export-debug "Android" "$ROOT/build/dot-war-debug.apk"
 test -s "$ROOT/build/dot-war-debug.apk"
 ls -la "$ROOT/build/dot-war-debug.apk"
+# Without INTERNET the game silently stays offline on the phone.
+unzip -p "$ROOT/build/dot-war-debug.apk" AndroidManifest.xml | strings -e l | grep -qx 'android.permission.INTERNET' \
+  || { echo "APK lacks android.permission.INTERNET" >&2; exit 1; }
