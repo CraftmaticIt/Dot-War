@@ -22,8 +22,12 @@ var _applied := false
 var attack_id := ""
 var commands: Array = []
 var surrender_tick := -1
+var _loadout: Array = []
+var _armed := ""
+var _boost_bar: HBoxContainer = null
 var backend: Backend = null
 var _give_up: Button = null
+var _rewards := {}
 var _save_failed := false
 const MAX_FRAME_CATCHUP := 0.25  # never fast-forward more than this after a long frame/resume
 var _acc := 0.0
@@ -67,6 +71,7 @@ func _ready() -> void:
 		_shot = args[i + 1]
 		dots = 60
 		seed = 7
+		_loadout = ["rage", "shield", "emp"]
 	elif not pending.is_empty():
 		colony = pending.colony
 		dots = pending.dots
@@ -74,6 +79,7 @@ func _ready() -> void:
 		trophies = colony.trophies
 		if pending.has("snapshot"):
 			attack_id = String(pending.get("attack_id", ""))
+			_loadout = pending.get("loadout", [])
 			var snap := ColonyState.from_dict(pending.snapshot)
 			if snap != null:
 				_start(snap, int(pending.loot_pool), dots, seed)
@@ -93,7 +99,7 @@ func _start(defender: ColonyState, loot_pool: int, dots: int, seed: int) -> void
 		if ids[id] == Vector2i.ZERO:
 			core_id = id
 	var world := AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), dots, seed)
-	battle = BattleMatch.new(world, core_id, loot_pool)
+	battle = BattleMatch.new(world, core_id, loot_pool, _loadout)
 	_build_scene()
 	_build_ui()
 
@@ -118,6 +124,38 @@ func request_surrender() -> bool:
 		return false
 	surrender_now()
 	return true
+
+## Booster flow: tap a booster button (arm), then tap the target node.
+func arm_booster(b: String) -> void:
+	_armed = b if battle.boosts_left.has(b) else ""
+	_refresh_boost_bar()
+
+func on_node_tapped(id: int) -> void:
+	if _armed == "" or battle.over:
+		return
+	var b := _armed
+	_armed = ""
+	commands.append({"tick": battle.world.tick, "type": "boost", "booster": b, "node": id})
+	battle.boost(b, id)
+	_refresh_boost_bar()
+
+func _refresh_boost_bar() -> void:
+	if _boost_bar == null:
+		return
+	for c in _boost_bar.get_children():
+		_boost_bar.remove_child(c)
+		c.queue_free()
+	_boost_bar.visible = not battle.boosts_left.is_empty()
+	var seen := {}
+	for b in battle.boosts_left:
+		if seen.has(b):
+			continue
+		seen[b] = true
+		var btn := Button.new()
+		btn.text = "%s ×%d%s" % [MetaDefs.booster_name(b), battle.boosts_left.count(b), " ◉" if _armed == b else ""]
+		btn.custom_minimum_size = Vector2(130, 44)
+		btn.pressed.connect(func(): arm_booster(b))
+		_boost_bar.add_child(btn)
 
 func surrender_now() -> void:
 	if not battle.over:
@@ -160,6 +198,7 @@ func _build_scene() -> void:
 	input.world = battle.world
 	input.views = views
 	input.send_requested.connect(func(from: int, to: int): send_cmd(from, to, percent))
+	input.node_tapped.connect(on_node_tapped)
 	map.add_child(input)
 
 ## The attacker never sees traps: strip trap info before drawing.
@@ -195,6 +234,10 @@ func _build_ui() -> void:
 	give_up.pressed.connect(request_surrender)
 	_give_up = give_up
 	layer.add_child(give_up)
+	_boost_bar = HBoxContainer.new()
+	_boost_bar.position = Vector2(420, 660)
+	layer.add_child(_boost_bar)
+	_refresh_boost_bar()
 	_end = VBoxContainer.new()
 	_end.position = Vector2(440, 220)
 	_end.custom_minimum_size = Vector2(400, 0)
@@ -255,6 +298,8 @@ func _apply_once(r: Dictionary) -> Dictionary:
 		if backend == null:
 			backend = Backend.shared(get_tree().root)
 		var sr := await backend.finish_attack(attack_id, commands, surrender_tick)
+		if typeof(sr.get("rewards")) == TYPE_DICTIONARY:
+			_rewards = sr.rewards
 		if typeof(sr.get("result")) == TYPE_DICTIONARY:
 			r = sr.result
 		elif sr.has("error"):
@@ -276,6 +321,20 @@ func _show_end() -> void:
 	_end.add_child(wait)
 	var r: Dictionary = await _apply_once(battle.result())
 	wait.queue_free()
+	for q in _rewards.get("quests", []):
+		var ql := Label.new()
+		ql.text = "Zadanie ukończone: %s" % q
+		ql.add_theme_color_override("font_color", Color("#B6FF00"))
+		_end.add_child(ql)
+	if typeof(_rewards.get("chest")) == TYPE_DICTIONARY:
+		var ch: Dictionary = _rewards.chest
+		var parts := PackedStringArray()
+		for b in ch.get("boosters", {}):
+			parts.append("%s ×%d" % [MetaDefs.booster_name(b), int(ch.boosters[b])])
+		var cl := Label.new()
+		cl.text = "Skrzynka: %s, +%d kryształów" % [", ".join(parts), int(ch.get("crystals", 0))]
+		cl.add_theme_color_override("font_color", Color("#FFB300"))
+		_end.add_child(cl)
 	if _save_failed:
 		var warn := Label.new()
 		warn.text = "Nie udało się zapisać gry!"

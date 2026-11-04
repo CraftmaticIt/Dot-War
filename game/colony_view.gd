@@ -13,6 +13,7 @@ const LETTERS := {"core": "C", "mine": "M", "storage": "S", "generator": "G",
 var colony: ColonyState        # may be injected before _ready (tests)
 var save_enabled := true
 var backend: Backend = null
+var _open_meta_on_ready := false
 var _sync_in := -1.0   # seconds until a debounced server sync (-1 = none)
 const SYNC_DEBOUNCE := 3.0
 var origin := Vector2(640, 380)
@@ -107,6 +108,8 @@ func _ready() -> void:
 		colony.place("generator", 0, 1, _now())
 		colony.place("laser", -1, 0, _now())
 		selected = Vector2i(0, 1)
+		if args.has("--meta"):
+			_open_meta_on_ready = true
 	elif colony == null:
 		var res := SaveStore.load_result(_now())
 		colony = res.colony
@@ -121,6 +124,15 @@ func _ready() -> void:
 		_save()
 	_build_ui()
 	_refresh()
+	if _open_meta_on_ready:
+		var m := MetaPanel.new()
+		m.backend = Backend.new(Transport.new(), {}, "user://shot_auth.json")
+		m.backend.profile = {"league": 1, "league_name": "Srebro", "season_ends": _now() + 9 * 86400, "crystals": 42,
+			"boosters": {"rage": 2, "shield": 1, "emp": 0, "split": 1},
+			"quests": [{"text": "Wygraj 2 ataki", "progress": 1, "target": 2, "reward": 10, "done": false},
+				{"text": "Zdobądź 5 gwiazdek", "progress": 5, "target": 5, "reward": 10, "done": true},
+				{"text": "Ulepsz 3 budynki", "progress": 0, "target": 3, "reward": 8, "done": false}]}
+		get_child(get_child_count() - 1).add_child(m)
 	if backend != null and backend.is_configured():
 		_sync_server()
 
@@ -145,6 +157,10 @@ func _sync_server() -> void:
 		colony = keep
 		_save()
 	if backend.online:
+		var lr = backend.profile.get("last_reward")
+		if typeof(lr) == TYPE_DICTIONARY and int(lr.get("season", -1)) > _seen_reward_season():
+			_mark_reward_seen(int(lr.season))
+			_show_toast("Koniec sezonu: liga %s, +%d kryształów" % [String(lr.get("league_name", "")), int(lr.get("reward", 0))])
 		var d: Dictionary = backend.last_sync.get("defenses", {})
 		if int(d.get("count", 0)) > 0:
 			_show_toast("Twoja kolonia została zaatakowana (%d×): −%d energii" % [int(d.count), int(d.get("loot", 0))])
@@ -167,6 +183,15 @@ func _build_ui() -> void:
 	attack.position = Vector2(1144, 12)
 	attack.pressed.connect(_on_attack)
 	layer.add_child(attack)
+	var meta := Button.new()
+	meta.text = "Meta"
+	meta.custom_minimum_size = Vector2(120, 48)
+	meta.position = Vector2(1016, 12)
+	meta.pressed.connect(func():
+		var m := MetaPanel.new()
+		m.backend = backend
+		layer.add_child(m))
+	layer.add_child(meta)
 	var training := Button.new()
 	training.text = "Trening"
 	training.custom_minimum_size = Vector2(120, 48)
@@ -192,13 +217,27 @@ func _show_toast(msg: String) -> void:
 		call_deferred("_show_toast", msg)
 	_toast_left = 4.0
 
+const SEEN_PATH := "user://meta_seen.json"
+
+func _seen_reward_season() -> int:
+	var j := JSON.new()
+	if FileAccess.file_exists(SEEN_PATH) and j.parse(FileAccess.get_file_as_string(SEEN_PATH)) == OK and typeof(j.data) == TYPE_DICTIONARY:
+		return int(j.data.get("season", -1))
+	return -1
+
+func _mark_reward_seen(season: int) -> void:
+	var f := FileAccess.open(SEEN_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"season": season}))
+
 func _on_attack() -> void:
 	if backend != null and backend.is_configured():
 		await _sync_server()  # server must see the dots produced since the last upload
-		var res := await backend.find_opponent()
+		var res := await backend.find_opponent(MetaPanel.loadout)
 		if not res.has("offline"):
 			if res.has("error"):
-				_show_toast(few_dots_text(colony) if res.error == "few_dots" else "Serwer: %s" % res.error)
+				_show_toast(few_dots_text(colony) if res.error == "few_dots"
+				else ("Brak boosterów z zestawu" if res.error == "no_boosters" else "Serwer: %s" % res.error))
 				return
 			colony.dots = 0
 			colony.dots_rem = 0
@@ -206,7 +245,9 @@ func _on_attack() -> void:
 			colony.attack_open = 1
 			_save()
 			BattleView.pending = {"colony": colony, "dots": int(res.dots), "seed": int(res.seed),
-				"snapshot": res.snapshot, "loot_pool": int(res.loot_pool), "attack_id": String(res.attack_id)}
+				"snapshot": res.snapshot, "loot_pool": int(res.loot_pool), "attack_id": String(res.attack_id),
+				"loadout": res.get("loadout", [])}
+			MetaPanel.loadout = []
 			get_tree().change_scene_to_file("res://game/battle_view.tscn")
 			return
 	var a := colony.begin_attack(_now())
@@ -304,6 +345,8 @@ func _refresh() -> void:
 
 func _update_dynamic(now: int) -> void:
 	var net := "" if backend == null or not backend.is_configured() else ("● online    " if backend.online else "○ offline    ")
+	if backend != null and not backend.profile.is_empty():
+		net += MetaPanel.league_text(backend.profile, now) + "    "
 	_hud.text = net + "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Trofea %d" % [
 		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
 		colony.busy_builders(now), ColonyState.BUILDERS, colony.trophies]

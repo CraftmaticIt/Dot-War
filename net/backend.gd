@@ -13,6 +13,8 @@ var online := false
 var session_lost := false
 ## Last sync response: {accepted, reason, defenses: {count, loot}}.
 var last_sync := {}
+## Latest server profile: {boosters, crystals, trophies, league, league_name, season_ends, quests, last_reward}.
+var profile := {}
 var _t: Transport
 var _url := ""
 var _key := ""
@@ -97,15 +99,20 @@ func sync(colony: ColonyState) -> ColonyState:
 	var r := await _call("sync_colony", {"colony": colony.to_dict()})
 	last_sync = {"accepted": r.data.get("accepted", false), "reason": r.data.get("reason", ""),
 		"defenses": r.data.get("defenses", {"count": 0, "loot": 0})}
+	_take_profile(r.data)
 	if r.status == 200:
 		var c := ColonyState.from_dict(r.data.get("colony"))
 		if c != null:
 			return c
 	return colony
 
-## {attack_id, snapshot, loot_pool, seed, dots, bot} | {error} | {offline: true}
-func find_opponent() -> Dictionary:
-	var r := await _call("find_opponent", {})
+func _take_profile(data: Dictionary) -> void:
+	if typeof(data.get("profile")) == TYPE_DICTIONARY:
+		profile = data.profile
+
+## {attack_id, snapshot, loot_pool, seed, dots, bot, loadout} | {error} | {offline: true}
+func find_opponent(loadout: Array = [], practice := false) -> Dictionary:
+	var r := await _call("find_opponent", {"loadout": loadout, "practice": practice})
 	if r.status == 0:
 		return {"offline": true}
 	return r.data
@@ -114,4 +121,13 @@ func finish_attack(attack_id: String, commands: Array, surrender_tick: int) -> D
 	var r := await _call("finish_attack", {"attack_id": attack_id, "commands": commands, "surrender_tick": surrender_tick})
 	if r.status == 0:
 		return {"offline": true}
+	_take_profile(r.data)
+	return r.data
+
+## {profile} | {error: "no_crystals"|"bad_item"} | {offline: true}
+func shop_buy(item: String) -> Dictionary:
+	var r := await _call("shop_buy", {"item": item})
+	if r.status == 0:
+		return {"offline": true}
+	_take_profile(r.data)
 	return r.data

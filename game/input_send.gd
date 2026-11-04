@@ -3,12 +3,15 @@ extends Node2D
 ## Drag from an own node to another node -> queue a send command. Draws the drag line.
 
 signal send_requested(from: int, to: int)
+## Press and release on the same node (any owner): used for booster targeting.
+signal node_tapped(id: int)
 
 var views: Array[NodeView] = []
 var player_owner := 1
 var world: SimWorld
 
 var _drag_from := -1
+var _press_node := -1
 var _drag_pos := Vector2.ZERO
 
 func _node_at(screen_pos: Vector2) -> int:
@@ -22,14 +25,18 @@ func _unhandled_input(e: InputEvent) -> void:
 	var pressed: bool = (e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT) or e is InputEventScreenTouch
 	if pressed and e.pressed:
 		var id: int = _node_at(e.position)
+		_press_node = id
 		if id != -1 and world.graph.node(id).owner == player_owner:
 			_drag_from = id
 			_drag_pos = get_global_transform().affine_inverse() * e.position
-	elif pressed and not e.pressed and _drag_from != -1:
+	elif pressed and not e.pressed:
 		var to: int = _node_at(e.position)
-		if to != -1 and to != _drag_from:
+		if to != -1 and to == _press_node:
+			node_tapped.emit(to)
+		elif _drag_from != -1 and to != -1 and to != _drag_from:
 			send_requested.emit(_drag_from, to)
 		_drag_from = -1
+		_press_node = -1
 		queue_redraw()
 	elif (e is InputEventMouseMotion or e is InputEventScreenDrag) and _drag_from != -1:
 		_drag_pos = get_global_transform().affine_inverse() * e.position
