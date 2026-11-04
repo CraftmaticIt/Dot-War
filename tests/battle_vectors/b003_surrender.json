@@ -1,0 +1,115 @@
+{
+  "bot": {
+    "trophies": 300,
+    "seed": 31
+  },
+  "bot_colony": {
+    "version": 1,
+    "cells": {
+      "-1,0": {
+        "type": "laser",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "-1,1": {
+        "type": "laser",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "-2,0": {
+        "type": "laser",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "0,0": {
+        "type": "core",
+        "level": 2,
+        "build_end": 0,
+        "target_level": 2
+      },
+      "0,1": {
+        "type": "mine",
+        "level": 2,
+        "build_end": 0,
+        "target_level": 2
+      },
+      "1,-1": {
+        "type": "wall",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "2,-1": {
+        "type": "laser",
+        "level": 2,
+        "build_end": 0,
+        "target_level": 2
+      },
+      "2,-2": {
+        "type": "mine",
+        "level": 2,
+        "build_end": 0,
+        "target_level": 2
+      },
+      "3,-2": {
+        "type": "wall",
+        "level": 2,
+        "build_end": 0,
+        "target_level": 2
+      }
+    },
+    "energy": 0,
+    "crystals": 0,
+    "dots": 0,
+    "last_collect": 0,
+    "energy_rem": 0,
+    "dots_rem": 0,
+    "trophies": 0,
+    "attacks": 0,
+    "attack_open": 0
+  },
+  "defender": null,
+  "loot_pool": 1200,
+  "dots": 80,
+  "seed": 31,
+  "surrender_tick": 300,
+  "commands": [
+    {
+      "tick": 0,
+      "from": 1001,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 40,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 80,
+      "from": 1003,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 120,
+      "from": 1,
+      "to": 2,
+      "percent": 50
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 0,
+      "destroyed_pct": 22,
+      "loot": 0,
+      "trophies": -8
+    },
+    "hash": 1180682616,
+    "ticks": 300
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "bot": {
+    "trophies": 100,
+    "seed": 77
+  },
+  "bot_colony": {
+    "version": 1,
+    "cells": {
+      "-1,1": {
+        "type": "mine",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "0,-1": {
+        "type": "wall",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "0,0": {
+        "type": "core",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "0,1": {
+        "type": "wall",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "1,0": {
+        "type": "generator",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "2,0": {
+        "type": "trap",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      }
+    },
+    "energy": 0,
+    "crystals": 0,
+    "dots": 0,
+    "last_collect": 0,
+    "energy_rem": 0,
+    "dots_rem": 0,
+    "trophies": 0,
+    "attacks": 0,
+    "attack_open": 0
+  },
+  "defender": null,
+  "loot_pool": 600,
+  "dots": 250,
+  "seed": 77,
+  "surrender_tick": -1,
+  "commands": [
+    {
+      "tick": 0,
+      "from": "1001",
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 1,
+      "from": 1001,
+      "to": 1
+    },
+    {
+      "tick": "x",
+      "from": 1001,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 2,
+      "from": 1,
+      "to": 1001,
+      "percent": 100
+    },
+    {
+      "tick": 3,
+      "from": 1002,
+      "to": 999,
+      "percent": 100
+    },
+    {
+      "tick": 4,
+      "from": 1003,
+      "to": 1,
+      "percent": 0
+    },
+    {
+      "tick": 0,
+      "from": 1001,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 40,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 80,
+      "from": 1003,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 120,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 160,
+      "from": 1,
+      "to": 4,
+      "percent": 50
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 1,
+      "destroyed_pct": 50,
+      "loot": 300,
+      "trophies": 10
+    },
+    "hash": 4090838844,
+    "ticks": 3600
+  }
+}

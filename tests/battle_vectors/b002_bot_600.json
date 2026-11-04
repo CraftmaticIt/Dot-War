@@ -1,0 +1,271 @@
+{
+  "bot": {
+    "trophies": 600,
+    "seed": 23
+  },
+  "bot_colony": {
+    "version": 1,
+    "cells": {
+      "-1,-1": {
+        "type": "generator",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-1,-2": {
+        "type": "pulse",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "-1,0": {
+        "type": "pulse",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "-1,1": {
+        "type": "storage",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-2,-1": {
+        "type": "wall",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-2,0": {
+        "type": "trap",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "-2,1": {
+        "type": "pulse",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-2,2": {
+        "type": "laser",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-2,3": {
+        "type": "laser",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "-2,4": {
+        "type": "mine",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "-3,1": {
+        "type": "pulse",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "-3,2": {
+        "type": "trap",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "0,0": {
+        "type": "core",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "1,-1": {
+        "type": "laser",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
+      },
+      "1,-2": {
+        "type": "mine",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      },
+      "2,-1": {
+        "type": "pulse",
+        "level": 4,
+        "build_end": 0,
+        "target_level": 4
+      }
+    },
+    "energy": 0,
+    "crystals": 0,
+    "dots": 0,
+    "last_collect": 0,
+    "energy_rem": 0,
+    "dots_rem": 0,
+    "trophies": 0,
+    "attacks": 0,
+    "attack_open": 0
+  },
+  "defender": null,
+  "loot_pool": 2100,
+  "dots": 120,
+  "seed": 23,
+  "surrender_tick": -1,
+  "commands": [
+    {
+      "tick": 0,
+      "from": 1001,
+      "to": 9,
+      "percent": 50
+    },
+    {
+      "tick": 40,
+      "from": 1002,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 80,
+      "from": 1003,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 120,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 160,
+      "from": 1002,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 200,
+      "from": 1003,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 240,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 280,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 320,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 360,
+      "from": 1003,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 400,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 440,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 480,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 520,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 560,
+      "from": 1003,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 600,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 640,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 680,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 720,
+      "from": 1003,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 760,
+      "from": 2,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 800,
+      "from": 1001,
+      "to": 3,
+      "percent": 50
+    },
+    {
+      "tick": 840,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 880,
+      "from": 1003,
+      "to": 1,
+      "percent": 50
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 0,
+      "destroyed_pct": 12,
+      "loot": 0,
+      "trophies": -8
+    },
+    "hash": 3471079265,
+    "ticks": 3600
+  }
+}

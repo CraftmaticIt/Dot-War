@@ -24,6 +24,14 @@ func send(from: int, to: int, percent: int) -> void:
 	world.queue({"tick": world.tick, "type": "send", "owner": AttackSetup.ATTACKER,
 		"from": from, "to": to, "percent": percent})
 
+## Untrusted command (replay from a client): {tick, from, to, percent} with any value types.
+## Stamped with the attacker owner and the current tick; SimWorld rejects malformed fields.
+func send_raw(c: Dictionary) -> void:
+	if over:
+		return
+	world.queue({"tick": world.tick, "type": "send", "owner": AttackSetup.ATTACKER,
+		"from": c.get("from"), "to": c.get("to"), "percent": c.get("percent")})
+
 func step() -> void:
 	if over:
 		return

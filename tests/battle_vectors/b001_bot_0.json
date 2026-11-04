@@ -1,0 +1,103 @@
+{
+  "bot": {
+    "trophies": 0,
+    "seed": 11
+  },
+  "bot_colony": {
+    "version": 1,
+    "cells": {
+      "-1,0": {
+        "type": "laser",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "0,0": {
+        "type": "core",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "1,0": {
+        "type": "laser",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "1,1": {
+        "type": "wall",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "2,0": {
+        "type": "storage",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      },
+      "2,1": {
+        "type": "mine",
+        "level": 1,
+        "build_end": 0,
+        "target_level": 1
+      }
+    },
+    "energy": 0,
+    "crystals": 0,
+    "dots": 0,
+    "last_collect": 0,
+    "energy_rem": 0,
+    "dots_rem": 0,
+    "trophies": 0,
+    "attacks": 0,
+    "attack_open": 0
+  },
+  "defender": null,
+  "loot_pool": 300,
+  "dots": 300,
+  "seed": 11,
+  "surrender_tick": -1,
+  "commands": [
+    {
+      "tick": 0,
+      "from": 1001,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 40,
+      "from": 1002,
+      "to": 1,
+      "percent": 50
+    },
+    {
+      "tick": 80,
+      "from": 1003,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 120,
+      "from": 1,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 160,
+      "from": 2,
+      "to": 3,
+      "percent": 50
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 2,
+      "destroyed_pct": 50,
+      "loot": 150,
+      "trophies": 20
+    },
+    "hash": 2153709784,
+    "ticks": 3600
+  }
+}

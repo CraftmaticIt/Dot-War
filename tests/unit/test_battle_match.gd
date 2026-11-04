@@ -93,3 +93,11 @@ func test_send_after_over_ignored():
 func test_progress_initial():
 	var m := _match({1: [6000, 0, 5], 2: [6000, 5000, 5]}, 30)
 	assert_eq(m.progress(), {"destroyed_pct": 0, "core": false, "stars": 0, "ticks_left": BattleMatch.DURATION_TICKS})
+
+func test_send_raw_rejects_malformed_without_crash():
+	var m := _match({1: [6000, 0, 5]}, 30)
+	m.send_raw({"from": "1001", "to": 1, "percent": 50})
+	m.send_raw({"to": 1})
+	m.step()
+	assert_eq(m.world.groups.size(), 0)
+	assert_eq(m.world.events.filter(func(e): return e.type == "cmd_rejected").size(), 2)
