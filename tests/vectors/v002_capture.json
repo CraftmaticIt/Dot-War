@@ -9,7 +9,9 @@
         "garrison": 30,
         "prod_per_sec": 3,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       },
       {
         "id": 2,
@@ -19,7 +21,9 @@
         "garrison": 30,
         "prod_per_sec": 3,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       },
       {
         "id": 3,
@@ -29,7 +33,9 @@
         "garrison": 10,
         "prod_per_sec": 2,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       },
       {
         "id": 4,
@@ -39,7 +45,9 @@
         "garrison": 5,
         "prod_per_sec": 1,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       }
     ],
     "links": [
@@ -133,5 +141,6 @@
     }
   ],
   "ticks": 400,
-  "expected_hash": 3191907406
+  "expected_hash": 3191907406,
+  "expected_canonical": "t400|n1,2,66,17|n2,2,51,0|n3,1,30,0|n4,1,27,7"
 }

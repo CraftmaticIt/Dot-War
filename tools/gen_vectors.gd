@@ -7,7 +7,9 @@ func _cmd(t: int, owner: int, from: int, to: int, pct: int) -> Dictionary:
 
 func _write(name: String, g: SimGraph, seed: int, cmds: Array, ticks: int) -> void:
 	var v := {"graph": g.to_dict(), "seed": seed, "commands": cmds, "ticks": ticks, "expected_hash": 0}
-	v.expected_hash = SimReplay.run(JSON.parse_string(JSON.stringify(v))).state_hash()
+	var w := SimReplay.run(JSON.parse_string(JSON.stringify(v)))
+	v.expected_hash = w.state_hash()
+	v["expected_canonical"] = w.canonical()
 	var f := FileAccess.open("res://tests/vectors/%s.json" % name, FileAccess.WRITE)
 	f.store_string(JSON.stringify(v, "  ", false) + "\n")
 	print("%s: %d" % [name, v.expected_hash])

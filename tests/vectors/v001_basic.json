@@ -9,7 +9,9 @@
         "garrison": 10,
         "prod_per_sec": 2,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       },
       {
         "id": 2,
@@ -19,7 +21,9 @@
         "garrison": 0,
         "prod_per_sec": 1,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       },
       {
         "id": 3,
@@ -29,7 +33,9 @@
         "garrison": 3,
         "prod_per_sec": 0,
         "tower": "",
-        "prod_acc": 0
+        "prod_acc": 0,
+        "trap": 0,
+        "tower_lvl": 1
       }
     ],
     "links": [
@@ -63,5 +69,6 @@
     }
   ],
   "ticks": 200,
-  "expected_hash": 2831248825
+  "expected_hash": 2831248825,
+  "expected_canonical": "t200|n1,1,25,0|n2,1,9,0|n3,1,3,0"
 }

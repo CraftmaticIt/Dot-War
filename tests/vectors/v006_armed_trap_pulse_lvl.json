@@ -93,5 +93,6 @@
     }
   ],
   "ticks": 120,
-  "expected_hash": 3543201206
+  "expected_hash": 3543201206,
+  "expected_canonical": "t120|n1,1,8,0|n2,1,53,0|n3,2,6,0,t20|n4,2,46,0"
 }
