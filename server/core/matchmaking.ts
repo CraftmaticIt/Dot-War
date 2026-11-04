@@ -73,7 +73,10 @@ export async function findOpponent(repo: Repo, uid: string, now: number, rand: (
     const bot = BotColony.generate(p.trophies, seed);
     row = { ...base, id: newId(), defender: null, bot: practice ? { trophies: p.trophies, seed, practice: true } : { trophies: p.trophies, seed }, snapshot: bot.colony.toDict(),
       seed, loot_pool: bot.lootPool };
-    if (!(await repo.insertAttack(row))) return { error: "busy" };
+    if (!(await repo.insertAttack(row))) {
+      if (loadout.length) await repo.grant(uid, 0, need);  // refund (dots are lost with the attempt anyway)
+      return { error: "busy" };
+    }
   }
   await repo.adjustPlayer(uid, 0, 1, null);
   return { attack_id: row.id, snapshot: disguise(row.snapshot), loot_pool: row.loot_pool, seed: row.seed,

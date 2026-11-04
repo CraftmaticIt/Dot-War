@@ -144,3 +144,11 @@ func test_speedup_errors():
 	c.crystals = 0
 	assert_eq(c.speedup(0, 1, T0), "no_crystals")
 	assert_eq(c.cells["0,1"].level, 0)
+
+func test_speedup_increments_spent_counter():
+	var c := _c()
+	c.place("generator", 0, 1, T0)
+	c.speedup(0, 1, T0)
+	assert_eq(c.crystals_spent, 1)
+	var back := ColonyState.from_dict(JSON.parse_string(JSON.stringify(c.to_dict())))
+	assert_eq(back.crystals_spent, 1)

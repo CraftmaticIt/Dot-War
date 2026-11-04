@@ -9,6 +9,7 @@ export function runBattle(defender: ColonyState, lootPool: number, dots: number,
   commands: unknown, surrenderTick = -1, loadout: unknown = []): { result: Result; hash: number; ticks: number; boostsUsed: number } {
   const cmds = Array.isArray(commands) ? commands.slice(0, MAX_COMMANDS) : [];
   const m = new BattleMatch(buildAttack(defender.toSimGraph(DEFENDER), dots, seed), defender.coreNodeId(), lootPool, loadout);
+  const brought = m.boostsLeft.length;  // only valid boosters the match accepted
   // Bucket commands by tick once (list order kept) instead of scanning all of them every tick.
   const byTick = new Map<number, unknown[]>();
   for (const c of cmds) {
@@ -23,6 +24,5 @@ export function runBattle(defender: ColonyState, lootPool: number, dots: number,
     for (const c of byTick.get(m.world.tick) ?? []) m.sendRaw(c);
     m.step();
   }
-  const brought = Array.isArray(loadout) ? Math.min(loadout.filter((b) => typeof b === "string").length, 3) : 0;
   return { result: m.result(), hash: m.world.stateHash(), ticks: m.world.tick, boostsUsed: Math.max(0, brought - m.boostsLeft.length) };
 }

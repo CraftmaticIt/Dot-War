@@ -190,6 +190,7 @@ func _build_ui() -> void:
 	meta.pressed.connect(func():
 		var m := MetaPanel.new()
 		m.backend = backend
+		m.profile_changed.connect(_adopt_profile)
 		layer.add_child(m))
 	layer.add_child(meta)
 	var training := Button.new()
@@ -219,6 +220,15 @@ func _show_toast(msg: String) -> void:
 
 const SEEN_PATH := "user://meta_seen.json"
 
+## The server owns the crystal balance: show what it says (purchases, rewards).
+func _adopt_profile(p: Dictionary) -> void:
+	if p.has("crystals"):
+		colony.crystals = int(p.crystals)
+		_save()
+		_refresh()
+
+var _attacking := false
+
 func _seen_reward_season() -> int:
 	var j := JSON.new()
 	if FileAccess.file_exists(SEEN_PATH) and j.parse(FileAccess.get_file_as_string(SEEN_PATH)) == OK and typeof(j.data) == TYPE_DICTIONARY:
@@ -231,6 +241,13 @@ func _mark_reward_seen(season: int) -> void:
 		f.store_string(JSON.stringify({"season": season}))
 
 func _on_attack() -> void:
+	if _attacking:
+		return  # a second tap would abandon the first attack (and its boosters)
+	_attacking = true
+	await _on_attack_inner()
+	_attacking = false
+
+func _on_attack_inner() -> void:
 	if backend != null and backend.is_configured():
 		await _sync_server()  # server must see the dots produced since the last upload
 		var res := await backend.find_opponent(MetaPanel.loadout)

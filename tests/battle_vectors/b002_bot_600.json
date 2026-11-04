@@ -111,7 +111,8 @@
     "dots_rem": 0,
     "trophies": 0,
     "attacks": 0,
-    "attack_open": 0
+    "attack_open": 0,
+    "crystals_spent": 0
   },
   "defender": null,
   "loot_pool": 2100,

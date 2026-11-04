@@ -14,6 +14,7 @@ var dots := 0
 var last_collect := 0
 var trophies := 0
 var attacks := 0
+var crystals_spent := 0  # monotonic total spent on speedups; the server charges the increase
 var attack_open := 0  # 1 between begin_attack and apply_result (abandoned battle = loss)
 var energy_rem := 0  # carried remainder of rate*secs (per 3600)
 var dots_rem := 0
@@ -126,6 +127,7 @@ func speedup(q: int, r: int, now: int) -> String:
 	if crystals < cost:
 		return "no_crystals"
 	crystals -= cost
+	crystals_spent += cost
 	cells[Hex.key(q, r)].build_end = now
 	finish_builds(now)
 	return ""
@@ -198,7 +200,7 @@ func collect(now: int) -> Dictionary:
 	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
 
 const SAVE_VERSION := 1
-const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem", "trophies", "attacks", "attack_open"]
+const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem", "trophies", "attacks", "attack_open", "crystals_spent"]
 const MIN_ATTACK_DOTS := 10
 
 func to_dict() -> Dictionary:

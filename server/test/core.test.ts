@@ -92,7 +92,7 @@ test("speedup with crystals accepted and crystals persisted", async () => {
   const c = await setup(repo, "u1", 0, 0, 5000);
   c.cells["0,0"] = { type: "core", level: 2, build_end: 0, target_level: 2 };
   c.energy -= 1000;
-  c.crystals -= 5;
+  c.crystalsSpent = 5;
   const r = await syncColony(repo, "u1", c.toDict(), T0 + 10);
   assert.equal(r.accepted, true, r.reason);
   assert.equal((await repo.getPlayer("u1"))!.crystals, 45);

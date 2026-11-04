@@ -5,8 +5,12 @@ extends PanelContainer
 ## Loadout chosen for the next online attack (kept across scenes).
 static var loadout: Array = []
 
+## Emitted after the server changed the balance (purchase): {crystals, boosters}.
+signal profile_changed(profile: Dictionary)
+
 var backend: Backend
 var _tabs: TabContainer
+var _busy := false
 var _msg: Label
 
 # --- pure helpers (unit-tested) ---
@@ -94,10 +98,18 @@ func _shop_tab(p: Dictionary) -> Control:
 	return v
 
 func _buy(b: String) -> void:
+	if _busy:
+		return
+	if backend == null or not backend.online:
+		_msg.text = "Sklep działa tylko online"
+		return
+	_busy = true
 	var r := await backend.shop_buy(b)
+	_busy = false
 	if r.has("error"):
 		_msg.text = "Za mało kryształów" if r.error == "no_crystals" else "Błąd: %s" % r.error
 		return
+	profile_changed.emit(backend.profile)
 	rebuild()
 
 func _loadout_tab(p: Dictionary) -> Control:

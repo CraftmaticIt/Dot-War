@@ -15,7 +15,7 @@ function view(p: Player, now: number): ProfileView {
   return {
     boosters: { ...p.boosters }, crystals: p.crystals, trophies: p.trophies, league: lg, league_name: DEFS.leagues[lg].name,
     season: p.season, season_ends: seasonEnds(now), last_reward: p.last_reward,
-    quests: (p.quests?.list ?? []).map((q) => {
+    quests: (p.quests?.list ?? []).filter((q) => questDef(q.id)).map((q) => {  // retired quest ids are skipped
       const d = questDef(q.id)!;
       return { id: q.id, text: d.text, progress: q.progress, target: d.target, reward: d.reward, done: q.done };
     }),

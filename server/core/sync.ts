@@ -41,8 +41,9 @@ function connected(c: ColonyState): boolean {
 }
 
 /** "" when `c` is reachable from `s` (accepted at `syncedAt`) by `now` under the game rules. */
-/** Crystals the client spent since `s` (speedups). The server copy is authoritative. */
-export const spentCrystals = (s: ColonyState, c: ColonyState) => Math.max(0, s.crystals - c.crystals);
+/** Crystals the client spent since `s`: the increase of its monotonic speedup counter. The
+ *  balance itself is server-owned (grants, shop, seasons never go through the client). */
+export const spentCrystals = (s: ColonyState, c: ColonyState) => c.crystalsSpent - s.crystalsSpent;
 
 /** Levels finished since `s` (quest event "upgrade"). */
 export function levelsGained(s: ColonyState, c: ColonyState): number {
@@ -53,6 +54,7 @@ export function levelsGained(s: ColonyState, c: ColonyState): number {
 
 export function plausible(s: ColonyState, c: ColonyState, p: Player, syncedAt: number, now: number): string {
   const spent = spentCrystals(s, c);
+  if (spent < 0) return "crystals_counter";
   if (spent > p.crystals) return "crystals";
   if (c.cells["0,0"]?.type !== "core" || Object.values(c.cells).filter((x) => x.type === "core").length !== 1) return "core";
   if (Object.keys(c.cells).length > B.maxNodes(c.coreLevel())) return "node_limit";
@@ -102,8 +104,12 @@ export function plausible(s: ColonyState, c: ColonyState, p: Player, syncedAt: n
 
 export async function syncColony(repo: Repo, uid: string, client: unknown, now: number,
   rand: () => number = Math.random): Promise<SyncResult> {
+  await profile(repo, uid, now);  // settle a finished season before the colony is judged
   const r = await syncCore(repo, uid, client, now, rand);
-  if (!r.error) r.profile = await profile(repo, uid, now);
+  if (!r.error) {
+    r.profile = await profile(repo, uid, now);
+    r.colony.crystals = r.profile.crystals;  // the client always learns the real balance
+  }
   return r;
 }
 
@@ -124,9 +130,10 @@ async function syncCore(repo: Repo, uid: string, client: unknown, now: number, r
       const since = now - OFFLINE_CAP_SECS;
       const base = ColonyState.newDefault(since);
       base.crystals = p.crystals;
+      base.crystalsSpent = 0;
       const reason = plausible(base, c, p, since, now);
       const adopt = reason ? ColonyState.newDefault(now) : c;
-      const spent = reason ? 0 : spentCrystals(base, c);
+      const spent = reason ? 0 : Math.max(0, spentCrystals(base, c));
       if (!(await repo.createColony(uid, out(adopt, p.crystals - spent), now))) continue;
       if (spent) await repo.adjustPlayer(uid, 0, 0, null, -spent);
       return { colony: out(adopt, p.crystals - spent), accepted: !reason, reason: reason || undefined, defenses };

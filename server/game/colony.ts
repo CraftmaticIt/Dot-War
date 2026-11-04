@@ -20,7 +20,7 @@ function validKey(k: string): boolean {
 const INT_FIELDS: [string, keyof ColonyState][] = [
   ["energy", "energy"], ["crystals", "crystals"], ["dots", "dots"], ["last_collect", "lastCollect"],
   ["energy_rem", "energyRem"], ["dots_rem", "dotsRem"], ["trophies", "trophies"], ["attacks", "attacks"],
-  ["attack_open", "attackOpen"],
+  ["attack_open", "attackOpen"], ["crystals_spent", "crystalsSpent"],
 ];
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
@@ -29,6 +29,8 @@ export class ColonyState {
   cells: Record<string, Cell> = {};
   energy = 0; crystals = 0; dots = 0; lastCollect = 0; energyRem = 0; dotsRem = 0;
   trophies = 0; attacks = 0; attackOpen = 0;
+  /** Monotonic total of crystals the client spent on speedups (server charges the increase). */
+  crystalsSpent = 0;
 
   static newDefault(now: number): ColonyState {
     const c = new ColonyState();

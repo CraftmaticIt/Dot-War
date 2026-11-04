@@ -306,6 +306,8 @@ func _apply_once(r: Dictionary) -> Dictionary:
 			# The server refused (e.g. attack expired): nothing is credited locally either.
 			r = {"stars": 0, "destroyed_pct": int(r.get("destroyed_pct", 0)), "loot": 0, "trophies": 0}
 	colony.apply_result(r)
+	if backend != null and backend.profile.has("crystals"):
+		colony.crystals = int(backend.profile.crystals)  # rewards (quests, chests) are server-side
 	if save_enabled and SaveStore.save(colony) != OK:
 		push_warning("BattleView: save failed")
 		_save_failed = true

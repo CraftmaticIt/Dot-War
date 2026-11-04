@@ -61,7 +61,7 @@ test("bought crystals spend is not charged again on the next sync", async () => 
   const repo = new MemoryRepo();
   const c = seeded(repo, "u", { crystals: 50 });
   await shopBuy(repo, "u", "rage", T0);
-  c.crystals = 35;  // client adopted the profile after buying
+  // the client does not touch its spent counter when the server sells something
   const s = await syncColony(repo, "u", c.toDict(), T0 + 10);
   assert.equal(s.colony.crystals, 35);
   assert.equal((await repo.getPlayer("u"))!.crystals, 35);
@@ -142,4 +142,55 @@ test("practice attacks give no quest progress or chest", async () => {
   const r = await finishAttack(repo, "u", f.attack_id!, cmds, -1, T0 + 60);
   assert.equal(r.rewards?.chest ?? null, null);
   assert.equal(JSON.stringify((await repo.getPlayer("u"))!.quests), before);
+});
+
+test("C1: server grants survive a sync from a client that never saw them", async () => {
+  const repo = new MemoryRepo();
+  const c = seeded(repo, "u", { crystals: 50 });
+  await repo.grant("u", 20, {});
+  const s = await syncColony(repo, "u", c.toDict(), T0 + 10);
+  assert.equal(s.accepted, true, s.reason);
+  assert.equal((await repo.getPlayer("u"))!.crystals, 70);
+  assert.equal(s.colony.crystals, 70, "client is told the real balance");
+});
+
+test("C1: season reward is in the colony returned by the same sync", async () => {
+  const repo = new MemoryRepo();
+  const c = seeded(repo, "u", { trophies: 1600, season: 0, crystals: 50 });
+  const later = DEFS.season.epoch + 15 * 86400;
+  const s1 = await syncColony(repo, "u", c.toDict(), later);
+  assert.equal(s1.colony.crystals, 250);
+  const s2 = await syncColony(repo, "u", c.toDict(), later + 5);  // stale client copy (50)
+  assert.equal((await repo.getPlayer("u"))!.crystals, 250, "reward not taken back");
+  assert.equal(s2.colony.crystals, 250);
+});
+
+test("C1: speedups are charged once via the spent counter; a lowered counter is rejected", async () => {
+  const repo = new MemoryRepo();
+  const c = seeded(repo, "u", { crystals: 50 });
+  repo.colonies.get("u")!.data.energy = 5000;
+  c.energy = 4000;
+  c.cells["0,0"] = { type: "core", level: 2, build_end: 0, target_level: 2 };
+  c.crystalsSpent = 5;
+  assert.equal((await syncColony(repo, "u", c.toDict(), T0 + 10)).accepted, true);
+  assert.equal((await repo.getPlayer("u"))!.crystals, 45);
+  await syncColony(repo, "u", c.toDict(), T0 + 20);
+  assert.equal((await repo.getPlayer("u"))!.crystals, 45, "same counter: no second charge");
+  c.crystalsSpent = 0;
+  assert.equal((await syncColony(repo, "u", c.toDict(), T0 + 30)).reason, "crystals_counter");
+});
+
+test("I2: prototype keys are not boosters", async () => {
+  const { cleanLoadout } = await import("../game/meta.ts");
+  assert.deepEqual(cleanLoadout(["__proto__", "constructor", "toString", "rage"]), ["rage"]);
+  const repo = new MemoryRepo();
+  seeded(repo, "u", { crystals: 50 });
+  for (const item of ["__proto__", "constructor", "toString"]) assert.equal((await shopBuy(repo, "u", item, T0)).error, "bad_item");
+});
+
+test("I2: boosts_used counts only real boosters from the loadout", async () => {
+  const { runBattle } = await import("../game/run_battle.ts");
+  const d = ColonyState.newDefault(T0);
+  const r = runBattle(d, 100, 30, 1, [{ tick: 0, type: "boost", booster: "rage", node: 1 }], -1, ["__proto__", "rage"]);
+  assert.equal(r.boostsUsed, 1);
 });

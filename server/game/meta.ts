@@ -83,7 +83,7 @@ export function rollChest(rand: () => number): { boosters: Record<string, number
 export function cleanLoadout(l: unknown): string[] {
   const out: string[] = [];
   for (const b of Array.isArray(l) ? l : []) {
-    if (typeof b === "string" && b in DEFS.boosters && out.length < DEFS.max_loadout) out.push(b);
+    if (typeof b === "string" && Object.hasOwn(DEFS.boosters, b) && out.length < DEFS.max_loadout) out.push(b);
   }
   return out;
 }
