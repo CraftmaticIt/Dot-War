@@ -87,3 +87,31 @@ func test_find_and_finish_payloads():
 	assert_eq(body.attack_id, "id1")
 	assert_eq(int(body.surrender_tick), 120)
 	assert_eq(body.commands.size(), 1)
+
+func test_failed_refresh_counts_as_offline():
+	var t := FakeTransport.new()
+	t.responses = [_signup(), _ok({"error": "unauthorized"}, 401), _ok({"error": "bad"}, 400)]
+	var b := _backend(t)
+	await b.sync(ColonyState.new_default(T0))
+	assert_false(b.online, "a dead session must not show online")
+	assert_true(b.session_lost)
+
+func test_sync_exposes_reason_and_defenses():
+	var t := FakeTransport.new()
+	t.responses = [_signup(), _ok({"accepted": false, "reason": "energy", "colony": ColonyState.new_default(T0).to_dict(),
+		"defenses": {"count": 2, "loot": 150}})]
+	var b := _backend(t)
+	await b.sync(ColonyState.new_default(T0))
+	assert_eq(b.last_sync.reason, "energy")
+	assert_eq(int(b.last_sync.defenses.loot), 150)
+
+func test_adopt_only_when_unchanged_meanwhile():
+	var CV = load("res://game/colony_view.gd")
+	var before := ColonyState.new_default(T0)
+	var server := ColonyState.new_default(T0)
+	server.trophies = 9
+	assert_eq(CV.after_sync(before.to_dict(), before, server, true).trophies, 9)
+	var changed := ColonyState.new_default(T0)
+	changed.energy = 1
+	assert_null(CV.after_sync(before.to_dict(), changed, server, true), "local action during sync -> keep local, resync")
+	assert_null(CV.after_sync(before.to_dict(), before, server, false), "offline -> nothing to adopt")

@@ -13,12 +13,12 @@ function player(id: string, trophies = 0, crystals = 50): Player {
   return { id, trophies, attacks: 0, crystals, shield_until: null };
 }
 async function setup(repo: MemoryRepo, id: string, trophies = 0, dots = 0, energy = 500) {
-  await repo.putPlayer(player(id, trophies));
   const c = ColonyState.newDefault(T0);
   c.dots = dots;
   c.energy = energy;
   c.cells["0,1"] = { type: "generator", level: 1, build_end: 0, target_level: 1 };
-  await repo.putColony(id, { data: c.toDict(), synced_at: T0 });
+  const { id: _, ...rest } = player(id, trophies);
+  repo.seed(id, rest, c.toDict(), T0);
   return c;
 }
 
@@ -49,7 +49,9 @@ test("inflated dots and crystals rejected", async () => {
   assert.equal((await syncColony(repo, "u1", c.toDict(), T0 + 60)).accepted, false);
   const d = ColonyState.fromDict((await repo.getColony("u1"))!.data)!;
   d.crystals = 51;
-  assert.equal((await syncColony(repo, "u1", d.toDict(), T0 + 60)).accepted, false);
+  const r = await syncColony(repo, "u1", d.toDict(), T0 + 60);
+  assert.equal(r.colony.crystals, 50, "crystals are server-owned: clamped, never raised");
+  assert.equal((await repo.getPlayer("u1"))!.crystals, 50);
 });
 
 test("server fields overwritten on accept", async () => {
@@ -67,7 +69,7 @@ test("level jump and finished build without time rejected", async () => {
   const c = await setup(repo, "u1", 0, 0, 5000);
   const jump = ColonyState.fromDict(c.toDict())!;
   jump.cells["1,0"] = { type: "mine", level: 3, build_end: 0, target_level: 3 };
-  assert.equal((await syncColony(repo, "u1", jump.toDict(), T0 + 8 * H)).accepted, false);
+  assert.equal((await syncColony(repo, "u1", jump.toDict(), T0 + 8 * H)).reason, "core_limit", "mine above core level");
   const instant = ColonyState.fromDict(c.toDict())!;
   instant.cells["0,0"] = { type: "core", level: 2, build_end: 0, target_level: 2 };  // 300 s build, 10 s later, no crystals
   instant.energy -= 1000;
@@ -115,7 +117,7 @@ test("skips shielded and already attacked; two attackers get different defenders
   await setup(repo, "d1", 100);
   await setup(repo, "d2", 100);
   await setup(repo, "sh", 100);
-  await repo.putPlayer({ ...player("sh", 100), shield_until: T0 + H });
+  repo.players.get("sh")!.shield_until = T0 + H;
   const r1 = await findOpponent(repo, "a1", T0 + 10, rand, () => repo.newId());
   const r2 = await findOpponent(repo, "a2", T0 + 10, rand, () => repo.newId());
   const d1 = (await repo.getAttack(r1.attack_id!))!.defender;

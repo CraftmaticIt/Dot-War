@@ -13,7 +13,7 @@ export type Deps = {
 };
 
 const STATUS: Record<string, number> = {
-  bad_colony: 400, bad_json: 400, few_dots: 409, no_colony: 409, abandoned: 409, not_found: 404, forbidden: 403,
+  bad_colony: 400, bad_json: 400, few_dots: 409, no_colony: 409, abandoned: 409, in_progress: 409, busy: 409, not_found: 404, forbidden: 403,
 };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

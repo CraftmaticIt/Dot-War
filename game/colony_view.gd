@@ -118,19 +118,35 @@ func _ready() -> void:
 	if backend != null and backend.is_configured():
 		_sync_server()
 
-## Uploads the colony; adopts the server's copy (server owns trophies/crystals and
-## rejects impossible jumps).
+## What to keep after a sync: the server copy, unless the player acted while the request was
+## in flight (then keep local and sync again) or we are offline. null = keep current.
+static func after_sync(before: Dictionary, current: ColonyState, got: ColonyState, online: bool) -> ColonyState:
+	if not online or current.to_dict() != before:
+		return null
+	return got if got.to_dict() != before else null
+
+## Uploads the colony; adopts the server's copy (server owns trophies/crystals and rejects
+## impossible jumps). Tells the player about rejections and attacks on their colony.
 func _sync_server() -> void:
 	if backend == null or not backend.is_configured():
 		return
 	var before := colony.to_dict()
 	var got := await backend.sync(colony)
-	if backend.online and got.to_dict() != before:
-		colony = got
+	if backend.online and colony.to_dict() != before:
+		_sync_in = SYNC_DEBOUNCE  # acted meanwhile: upload again shortly
+	var keep := after_sync(before, colony, got, backend.online)
+	if keep != null:
+		colony = keep
 		_save()
-		_refresh()
-	elif not backend.online:
-		_update_dynamic(_now())
+	if backend.online:
+		var d: Dictionary = backend.last_sync.get("defenses", {})
+		if int(d.get("count", 0)) > 0:
+			_show_toast("Twoja kolonia została zaatakowana (%d×): −%d energii" % [int(d.count), int(d.get("loot", 0))])
+		elif not backend.last_sync.get("accepted", true) and keep != null:
+			_show_toast("Serwer przywrócił zapis (%s)" % backend.last_sync.get("reason", "?"))
+	elif backend.session_lost:
+		_show_toast("Sesja serwera utracona – gra offline")
+	_refresh()
 
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
@@ -172,6 +188,7 @@ func _show_toast(msg: String) -> void:
 
 func _on_attack() -> void:
 	if backend != null and backend.is_configured():
+		await _sync_server()  # server must see the dots produced since the last upload
 		var res := await backend.find_opponent()
 		if not res.has("offline"):
 			if res.has("error"):

@@ -9,6 +9,10 @@ const AUTH_PATH := "user://auth.json"
 static var _shared: Backend = null
 
 var online := false
+## True when the stored session could not be refreshed (calls then behave as offline).
+var session_lost := false
+## Last sync response: {accepted, reason, defenses: {count, loot}}.
+var last_sync := {}
 var _t: Transport
 var _url := ""
 var _key := ""
@@ -75,14 +79,24 @@ func _call(fn: String, payload: Dictionary) -> Dictionary:
 		return {"status": 0, "data": {}}
 	var body := JSON.stringify(payload)
 	var r := _parse(await _t.request("POST", _url + "/functions/v1/" + fn, _headers(_session.access_token), body))
-	if r.status == 401 and await _refresh():
-		r = _parse(await _t.request("POST", _url + "/functions/v1/" + fn, _headers(_session.access_token), body))
-	online = r.status != 0
+	if r.status == 401:
+		if await _refresh():
+			r = _parse(await _t.request("POST", _url + "/functions/v1/" + fn, _headers(_session.access_token), body))
+		else:
+			session_lost = true
+			online = false
+			return {"status": 0, "data": {}}
+	online = r.status != 0 and r.status != 401
+	if r.status == 401:
+		session_lost = true
+		return {"status": 0, "data": {}}
 	return r
 
 ## Server-authoritative colony (accepted upload or the server's own copy). Offline: unchanged.
 func sync(colony: ColonyState) -> ColonyState:
 	var r := await _call("sync_colony", {"colony": colony.to_dict()})
+	last_sync = {"accepted": r.data.get("accepted", false), "reason": r.data.get("reason", ""),
+		"defenses": r.data.get("defenses", {"count": 0, "loot": 0})}
 	if r.status == 200:
 		var c := ColonyState.from_dict(r.data.get("colony"))
 		if c != null:
