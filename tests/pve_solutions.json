@@ -1,0 +1,136 @@
+{
+  "1": [
+    {
+      "slot": 2,
+      "type": "laser"
+    }
+  ],
+  "2": [
+    {
+      "slot": 3,
+      "type": "pulse"
+    },
+    {
+      "slot": 4,
+      "type": "laser"
+    }
+  ],
+  "3": [
+    {
+      "slot": 3,
+      "type": "laser"
+    },
+    {
+      "slot": 4,
+      "type": "laser"
+    }
+  ],
+  "4": [
+    {
+      "slot": 4,
+      "type": "laser"
+    }
+  ],
+  "5": [
+    {
+      "slot": 4,
+      "type": "laser"
+    },
+    {
+      "slot": 5,
+      "type": "laser"
+    }
+  ],
+  "6": [
+    {
+      "slot": 3,
+      "type": "laser"
+    }
+  ],
+  "7": [
+    {
+      "slot": 5,
+      "type": "laser"
+    }
+  ],
+  "8": [
+    {
+      "slot": 4,
+      "type": "laser"
+    },
+    {
+      "slot": 5,
+      "type": "laser"
+    }
+  ],
+  "9": [
+    {
+      "slot": 5,
+      "type": "laser"
+    }
+  ],
+  "10": [
+    {
+      "slot": 4,
+      "type": "laser"
+    }
+  ],
+  "11": [
+    {
+      "slot": 2,
+      "type": "laser"
+    },
+    {
+      "slot": 5,
+      "type": "laser"
+    }
+  ],
+  "12": [
+    {
+      "slot": 3,
+      "type": "laser"
+    }
+  ],
+  "13": [
+    {
+      "slot": 4,
+      "type": "laser"
+    },
+    {
+      "slot": 5,
+      "type": "laser"
+    },
+    {
+      "slot": 6,
+      "type": "pulse"
+    }
+  ],
+  "14": [
+    {
+      "slot": 4,
+      "type": "laser"
+    },
+    {
+      "slot": 7,
+      "type": "wall"
+    },
+    {
+      "slot": 9,
+      "type": "laser"
+    }
+  ],
+  "15": [
+    {
+      "slot": 4,
+      "type": "laser"
+    },
+    {
+      "slot": 7,
+      "type": "wall"
+    },
+    {
+      "slot": 9,
+      "type": "laser"
+    }
+  ]
+}

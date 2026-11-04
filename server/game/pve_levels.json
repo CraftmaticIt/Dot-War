@@ -234,6 +234,2108 @@
           "kind": 0
         }
       ]
+    },
+    {
+      "id": 2,
+      "chapter": 1,
+      "name": "Puls na rój",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 5000,
+          "y": 1200,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 9000,
+          "y": -1200,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 2500,
+          "y": -1500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          9
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ]
+      ],
+      "allowed": {
+        "pulse": 1,
+        "laser": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 48,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 56,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 64,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 200,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 208,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 216,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 224,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 360,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 368,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 376,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        },
+        {
+          "tick": 384,
+          "node": 9,
+          "count": 7,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "chapter": 1,
+      "name": "Dwie drogi",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 6000,
+          "y": 4500,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 6000,
+          "y": -4500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 9000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 12000,
+          "y": 6000,
+          "role": "spawn"
+        },
+        {
+          "id": 8,
+          "x": 12000,
+          "y": -6000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          9
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 2
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 100,
+          "node": 8,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 160,
+          "node": 9,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 220,
+          "node": 8,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 280,
+          "node": 9,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 340,
+          "node": 8,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 400,
+          "node": 9,
+          "count": 18,
+          "kind": 0
+        },
+        {
+          "tick": 460,
+          "node": 8,
+          "count": 18,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "chapter": 1,
+      "name": "Długa droga",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 6000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 6000,
+          "y": 6000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 2500,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 9500,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 0,
+          "y": 12000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          9,
+          3
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 1,
+        "pulse": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 110,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 180,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 250,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 320,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 390,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "chapter": 1,
+      "name": "Oblężenie",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 4000,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 4000,
+          "y": -3000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 11000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 4000,
+          "role": "spawn"
+        },
+        {
+          "id": 8,
+          "x": 14000,
+          "y": -4000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          9,
+          2
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "pulse": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 100,
+          "node": 8,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 160,
+          "node": 9,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 220,
+          "node": 8,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 280,
+          "node": 9,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 340,
+          "node": 8,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 400,
+          "node": 9,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 460,
+          "node": 8,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 520,
+          "node": 9,
+          "count": 19,
+          "kind": 0
+        },
+        {
+          "tick": 580,
+          "node": 8,
+          "count": 19,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "chapter": 2,
+      "name": "Mur",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 6000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 3000,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 9000,
+          "y": 3500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "allowed": {
+        "wall": 1,
+        "laser": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 130,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 220,
+          "node": 9,
+          "count": 17,
+          "kind": 0
+        },
+        {
+          "tick": 330,
+          "node": 9,
+          "count": 11,
+          "kind": 1
+        },
+        {
+          "tick": 390,
+          "node": 9,
+          "count": 11,
+          "kind": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "chapter": 2,
+      "name": "Pułapka",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 5000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 9000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 7000,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 3000,
+          "y": -3000,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          1,
+          5
+        ]
+      ],
+      "allowed": {
+        "trap": 1,
+        "laser": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 29,
+          "kind": 0
+        },
+        {
+          "tick": 160,
+          "node": 9,
+          "count": 9,
+          "kind": 1
+        },
+        {
+          "tick": 230,
+          "node": 9,
+          "count": 9,
+          "kind": 1
+        },
+        {
+          "tick": 300,
+          "node": 9,
+          "count": 9,
+          "kind": 1
+        },
+        {
+          "tick": 370,
+          "node": 9,
+          "count": 9,
+          "kind": 1
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "chapter": 2,
+      "name": "Szybkie kropki",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 6000,
+          "y": 2500,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 6000,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 9000,
+          "y": 6000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 3000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 13000,
+          "y": 5000,
+          "role": "spawn"
+        },
+        {
+          "id": 8,
+          "x": 13000,
+          "y": -5000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          9,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          1,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "wall": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 90,
+          "node": 8,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 140,
+          "node": 9,
+          "count": 14,
+          "kind": 0
+        },
+        {
+          "tick": 190,
+          "node": 8,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 240,
+          "node": 9,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 290,
+          "node": 8,
+          "count": 14,
+          "kind": 0
+        },
+        {
+          "tick": 340,
+          "node": 9,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 390,
+          "node": 8,
+          "count": 14,
+          "kind": 1
+        },
+        {
+          "tick": 440,
+          "node": 9,
+          "count": 14,
+          "kind": 0
+        },
+        {
+          "tick": 490,
+          "node": 8,
+          "count": 14,
+          "kind": 1
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "chapter": 2,
+      "name": "Rozwidlenie",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 7000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 4000,
+          "y": 5000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 3000,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 10000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 5000,
+          "role": "spawn"
+        },
+        {
+          "id": 8,
+          "x": 14000,
+          "y": -5000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          9,
+          2
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "allowed": {
+        "wall": 1,
+        "trap": 1,
+        "laser": 1,
+        "pulse": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 95,
+          "node": 8,
+          "count": 12,
+          "kind": 1
+        },
+        {
+          "tick": 150,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 205,
+          "node": 8,
+          "count": 12,
+          "kind": 1
+        },
+        {
+          "tick": 260,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 315,
+          "node": 8,
+          "count": 12,
+          "kind": 1
+        },
+        {
+          "tick": 370,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 425,
+          "node": 8,
+          "count": 12,
+          "kind": 1
+        },
+        {
+          "tick": 480,
+          "node": 9,
+          "count": 12,
+          "kind": 0
+        },
+        {
+          "tick": 535,
+          "node": 8,
+          "count": 12,
+          "kind": 1
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "chapter": 2,
+      "name": "Wszystko naraz",
+      "level": 1,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 3000,
+          "y": 3500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 3000,
+          "y": -3500,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 6,
+          "x": 7500,
+          "y": 5000,
+          "role": "slot"
+        },
+        {
+          "id": 7,
+          "x": 7500,
+          "y": -5000,
+          "role": "slot"
+        },
+        {
+          "id": 8,
+          "x": 11500,
+          "y": 2500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 11500,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 20,
+          "x": 16000,
+          "y": 0,
+          "role": "spawn"
+        },
+        {
+          "id": 21,
+          "x": 14500,
+          "y": 7000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          20
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          6,
+          21
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "wall": 1,
+        "trap": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 20,
+          "count": 8,
+          "kind": 0
+        },
+        {
+          "tick": 110,
+          "node": 21,
+          "count": 8,
+          "kind": 1
+        },
+        {
+          "tick": 180,
+          "node": 20,
+          "count": 8,
+          "kind": 0
+        },
+        {
+          "tick": 250,
+          "node": 21,
+          "count": 8,
+          "kind": 1
+        },
+        {
+          "tick": 320,
+          "node": 20,
+          "count": 8,
+          "kind": 0
+        },
+        {
+          "tick": 390,
+          "node": 21,
+          "count": 8,
+          "kind": 1
+        },
+        {
+          "tick": 460,
+          "node": 20,
+          "count": 8,
+          "kind": 0
+        },
+        {
+          "tick": 530,
+          "node": 21,
+          "count": 8,
+          "kind": 1
+        },
+        {
+          "tick": 600,
+          "node": 20,
+          "count": 8,
+          "kind": 0
+        },
+        {
+          "tick": 670,
+          "node": 21,
+          "count": 8,
+          "kind": 1
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "chapter": 3,
+      "name": "Pancerz",
+      "level": 2,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 5000,
+          "y": 2000,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 9000,
+          "y": -2000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 7000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 2500,
+          "y": -2000,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          4
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "wall": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        },
+        {
+          "tick": 110,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        },
+        {
+          "tick": 180,
+          "node": 9,
+          "count": 29,
+          "kind": 0
+        },
+        {
+          "tick": 250,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        },
+        {
+          "tick": 320,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        },
+        {
+          "tick": 390,
+          "node": 9,
+          "count": 29,
+          "kind": 0
+        },
+        {
+          "tick": 460,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        },
+        {
+          "tick": 530,
+          "node": 9,
+          "count": 29,
+          "kind": 2
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "chapter": 3,
+      "name": "Odłamki",
+      "level": 2,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 4000,
+          "y": 1800,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 9000,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 8000,
+          "y": -3500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 0,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "allowed": {
+        "laser": 1,
+        "pulse": 1,
+        "wall": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 85,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 130,
+          "node": 9,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 175,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 220,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 265,
+          "node": 9,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 310,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 355,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 400,
+          "node": 9,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 445,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 490,
+          "node": 9,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 535,
+          "node": 9,
+          "count": 20,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "chapter": 3,
+      "name": "Mieszany rój",
+      "level": 2,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 4000,
+          "y": 3000,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 4000,
+          "y": -3000,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 11000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 6,
+          "x": 2000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 14000,
+          "y": 4000,
+          "role": "spawn"
+        },
+        {
+          "id": 8,
+          "x": 14000,
+          "y": -4000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          9,
+          2
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          1,
+          6
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "pulse": 1,
+        "trap": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 9,
+          "count": 28,
+          "kind": 1
+        },
+        {
+          "tick": 90,
+          "node": 8,
+          "count": 28,
+          "kind": 2
+        },
+        {
+          "tick": 140,
+          "node": 9,
+          "count": 28,
+          "kind": 3
+        },
+        {
+          "tick": 190,
+          "node": 8,
+          "count": 28,
+          "kind": 0
+        },
+        {
+          "tick": 240,
+          "node": 9,
+          "count": 28,
+          "kind": 1
+        },
+        {
+          "tick": 290,
+          "node": 8,
+          "count": 28,
+          "kind": 2
+        },
+        {
+          "tick": 340,
+          "node": 9,
+          "count": 28,
+          "kind": 3
+        },
+        {
+          "tick": 390,
+          "node": 8,
+          "count": 28,
+          "kind": 0
+        },
+        {
+          "tick": 440,
+          "node": 9,
+          "count": 28,
+          "kind": 1
+        },
+        {
+          "tick": 490,
+          "node": 8,
+          "count": 28,
+          "kind": 2
+        },
+        {
+          "tick": 540,
+          "node": 9,
+          "count": 28,
+          "kind": 3
+        },
+        {
+          "tick": 590,
+          "node": 8,
+          "count": 28,
+          "kind": 0
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "chapter": 3,
+      "name": "Trzy fronty",
+      "level": 2,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 3000,
+          "y": 3500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 3000,
+          "y": -3500,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 6,
+          "x": 7500,
+          "y": 5000,
+          "role": "slot"
+        },
+        {
+          "id": 7,
+          "x": 7500,
+          "y": -5000,
+          "role": "slot"
+        },
+        {
+          "id": 8,
+          "x": 11500,
+          "y": 2500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 11500,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 20,
+          "x": 16000,
+          "y": 0,
+          "role": "spawn"
+        },
+        {
+          "id": 21,
+          "x": 14500,
+          "y": 7000,
+          "role": "spawn"
+        },
+        {
+          "id": 22,
+          "x": 14500,
+          "y": -7000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          20
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          6,
+          21
+        ],
+        [
+          7,
+          22
+        ]
+      ],
+      "allowed": {
+        "laser": 2,
+        "pulse": 1,
+        "wall": 1,
+        "trap": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 20,
+          "count": 16,
+          "kind": 0
+        },
+        {
+          "tick": 100,
+          "node": 21,
+          "count": 16,
+          "kind": 2
+        },
+        {
+          "tick": 160,
+          "node": 22,
+          "count": 16,
+          "kind": 1
+        },
+        {
+          "tick": 220,
+          "node": 20,
+          "count": 16,
+          "kind": 3
+        },
+        {
+          "tick": 280,
+          "node": 21,
+          "count": 16,
+          "kind": 0
+        },
+        {
+          "tick": 340,
+          "node": 22,
+          "count": 16,
+          "kind": 2
+        },
+        {
+          "tick": 400,
+          "node": 20,
+          "count": 16,
+          "kind": 1
+        },
+        {
+          "tick": 460,
+          "node": 21,
+          "count": 16,
+          "kind": 3
+        },
+        {
+          "tick": 520,
+          "node": 22,
+          "count": 16,
+          "kind": 0
+        },
+        {
+          "tick": 580,
+          "node": 20,
+          "count": 16,
+          "kind": 2
+        },
+        {
+          "tick": 640,
+          "node": 21,
+          "count": 16,
+          "kind": 1
+        },
+        {
+          "tick": 700,
+          "node": 22,
+          "count": 16,
+          "kind": 3
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "chapter": 3,
+      "name": "Ostatnia linia",
+      "level": 3,
+      "nodes": [
+        {
+          "id": 1,
+          "x": 0,
+          "y": 0,
+          "role": "core"
+        },
+        {
+          "id": 2,
+          "x": 4000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 3,
+          "x": 3000,
+          "y": 3500,
+          "role": "slot"
+        },
+        {
+          "id": 4,
+          "x": 3000,
+          "y": -3500,
+          "role": "slot"
+        },
+        {
+          "id": 5,
+          "x": 8000,
+          "y": 0,
+          "role": "slot"
+        },
+        {
+          "id": 6,
+          "x": 7500,
+          "y": 5000,
+          "role": "slot"
+        },
+        {
+          "id": 7,
+          "x": 7500,
+          "y": -5000,
+          "role": "slot"
+        },
+        {
+          "id": 8,
+          "x": 11500,
+          "y": 2500,
+          "role": "slot"
+        },
+        {
+          "id": 9,
+          "x": 11500,
+          "y": -2500,
+          "role": "slot"
+        },
+        {
+          "id": 20,
+          "x": 16000,
+          "y": 0,
+          "role": "spawn"
+        },
+        {
+          "id": 21,
+          "x": 14500,
+          "y": 7000,
+          "role": "spawn"
+        },
+        {
+          "id": 22,
+          "x": 14500,
+          "y": -7000,
+          "role": "spawn"
+        }
+      ],
+      "links": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          20
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          6,
+          21
+        ],
+        [
+          7,
+          22
+        ]
+      ],
+      "allowed": {
+        "laser": 3,
+        "pulse": 1,
+        "wall": 1,
+        "trap": 1
+      },
+      "waves": [
+        {
+          "tick": 40,
+          "node": 20,
+          "count": 20,
+          "kind": 2
+        },
+        {
+          "tick": 90,
+          "node": 21,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 140,
+          "node": 22,
+          "count": 20,
+          "kind": 1
+        },
+        {
+          "tick": 190,
+          "node": 20,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 240,
+          "node": 21,
+          "count": 20,
+          "kind": 2
+        },
+        {
+          "tick": 290,
+          "node": 22,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 340,
+          "node": 20,
+          "count": 20,
+          "kind": 1
+        },
+        {
+          "tick": 390,
+          "node": 21,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 440,
+          "node": 22,
+          "count": 20,
+          "kind": 2
+        },
+        {
+          "tick": 490,
+          "node": 20,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 540,
+          "node": 21,
+          "count": 20,
+          "kind": 1
+        },
+        {
+          "tick": 590,
+          "node": 22,
+          "count": 20,
+          "kind": 0
+        },
+        {
+          "tick": 640,
+          "node": 20,
+          "count": 20,
+          "kind": 2
+        },
+        {
+          "tick": 690,
+          "node": 21,
+          "count": 20,
+          "kind": 3
+        },
+        {
+          "tick": 740,
+          "node": 22,
+          "count": 20,
+          "kind": 1
+        },
+        {
+          "tick": 790,
+          "node": 20,
+          "count": 20,
+          "kind": 0
+        }
+      ]
     }
   ]
 }
