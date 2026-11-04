@@ -6,13 +6,13 @@ extends SceneTree
 const T0 := 1_800_000_000
 
 ## Runs one battle. Commands are recorded from SimpleBot (attacker) unless `fixed` is given.
-func _battle(defender: ColonyState, loot_pool: int, dots: int, seed: int, fixed = null, extra := [], stop_tick := -1) -> Dictionary:
+func _battle(defender: ColonyState, loot_pool: int, dots: int, seed: int, fixed = null, extra := [], stop_tick := -1, loadout := []) -> Dictionary:
 	var ids := defender.snapshot_ids()
 	var core := 1
 	for id in ids:
 		if ids[id] == Vector2i.ZERO:
 			core = id
-	var m := BattleMatch.new(AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), dots, seed), core, loot_pool)
+	var m := BattleMatch.new(AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), dots, seed), core, loot_pool, loadout)
 	var cmds: Array = [] if fixed == null else fixed.duplicate(true)
 	for c in extra:
 		cmds.append(c)
@@ -67,5 +67,22 @@ func _init() -> void:
 	r = _battle(bot.colony, bot.loot_pool, 250, 77, null, bad)
 	_write("b005_malformed_cmds", {"bot": {"trophies": 100, "seed": 77}, "bot_colony": bot.colony.to_dict(),
 		"defender": null, "loot_pool": bot.loot_pool, "dots": 250, "seed": 77, "surrender_tick": -1,
+		"commands": r.commands, "expected": {"result": r.result, "hash": r.hash, "ticks": r.ticks}})
+	# b006: boosters from a loadout (4th and out-of-loadout ones ignored).
+	var bb := BotColony.generate(300, 61)
+	var bbc: ColonyState = bb.colony
+	var ids: Dictionary = bbc.snapshot_ids()
+	var tgt := 1
+	for id in ids:
+		if ids[id] == Vector2i.ZERO:
+			tgt = id
+	var boosts := [{"tick": 40, "type": "boost", "booster": "rage", "node": tgt},
+		{"tick": 41, "type": "boost", "booster": "shield", "node": tgt},
+		{"tick": 42, "type": "boost", "booster": "emp", "node": tgt},
+		{"tick": 43, "type": "boost", "booster": "split", "node": tgt},
+		{"tick": 44, "type": "boost", "booster": "rage", "node": tgt}]
+	r = _battle(bb.colony, bb.loot_pool, 160, 61, null, boosts, -1, ["rage", "shield", "emp"])
+	_write("b006_boosts", {"bot": {"trophies": 300, "seed": 61}, "bot_colony": bb.colony.to_dict(), "defender": null,
+		"loot_pool": bb.loot_pool, "dots": 160, "seed": 61, "surrender_tick": -1, "loadout": ["rage", "shield", "emp"],
 		"commands": r.commands, "expected": {"result": r.result, "hash": r.hash, "ticks": r.ticks}})
 	quit()

@@ -9,9 +9,15 @@ var over := false
 var _core: int
 var _pool: int
 var _defender_ids: Array[int] = []
+const MAX_BOOSTS := 3
+## Boosters the attacker brought and has not used yet (from the pre-attack loadout).
+var boosts_left: Array = []
 
-func _init(p_world: SimWorld, core_node: int, loot_pool: int) -> void:
+func _init(p_world: SimWorld, core_node: int, loot_pool: int, loadout: Array = []) -> void:
 	world = p_world
+	for b in loadout:
+		if typeof(b) == TYPE_STRING and SimWorld.BOOST_TICKS.has(b) and boosts_left.size() < MAX_BOOSTS:
+			boosts_left.append(b)
 	_core = core_node
 	_pool = loot_pool
 	for id in world.graph.node_ids():
@@ -24,10 +30,23 @@ func send(from: int, to: int, percent: int) -> void:
 	world.queue({"tick": world.tick, "type": "send", "owner": AttackSetup.ATTACKER,
 		"from": from, "to": to, "percent": percent})
 
-## Untrusted command (replay from a client): {tick, from, to, percent} with any value types.
-## Stamped with the attacker owner and the current tick; SimWorld rejects malformed fields.
+## Uses a booster from the loadout on `node`. Consumed when sent (even if the sim then
+## rejects the node), so client and server replay stay identical. false = not available.
+func boost(booster, node) -> bool:
+	if over or typeof(booster) != TYPE_STRING or not boosts_left.has(booster):
+		return false
+	boosts_left.erase(booster)
+	world.queue({"tick": world.tick, "type": "boost", "owner": AttackSetup.ATTACKER, "booster": booster, "node": node})
+	return true
+
+## Untrusted command (replay from a client): {tick, from, to, percent} or
+## {tick, type: "boost", booster, node} with any value types. Stamped with the attacker
+## owner and the current tick; SimWorld rejects malformed fields.
 func send_raw(c: Dictionary) -> void:
 	if over:
+		return
+	if c.get("type") is String and c.get("type") == "boost":
+		boost(c.get("booster"), c.get("node"))
 		return
 	world.queue({"tick": world.tick, "type": "send", "owner": AttackSetup.ATTACKER,
 		"from": c.get("from"), "to": c.get("to"), "percent": c.get("percent")})

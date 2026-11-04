@@ -11,6 +11,10 @@ export type Group = {
   id: number; owner: number; count: number; path: number[]; seg: number; progress: number; dmg_acc: number;
 };
 export type Cmd = { tick: number; type: "send"; owner: number; from: number; to: number; percent: number };
+export type BoostCmd = { tick: number; type: "boost"; owner: number; booster: string; node: number };
+export type Effect = { type: string; owner: number; node: number; until: number };
+export const BOOST_TICKS: Record<string, number> = { rage: 160, shield: 120, emp: 80, split: 200 };
+export const EMP_RANGE = 3000;
 export type SimEvent = Record<string, unknown> & { type: string };
 
 const NUM_KEYS = ["tick", "owner", "from", "to", "percent"] as const;
@@ -21,7 +25,8 @@ export class SimWorld {
   tick = 0;
   groups: Group[] = [];
   events: SimEvent[] = [];
-  private q: Cmd[] = [];
+  effects: Effect[] = [];
+  private q: (Cmd | BoostCmd)[] = [];
   private bad: unknown[] = [];
   private nextGroupId = 0;
 
@@ -32,6 +37,16 @@ export class SimWorld {
 
   /** Untrusted input: malformed commands are rejected on the next step, never thrown. */
   queue(cmd: any): void {
+    if (cmd !== null && typeof cmd === "object" && cmd.type === "boost") {
+      if (typeof cmd.booster !== "string" || !Object.hasOwn(BOOST_TICKS, cmd.booster)) { this.bad.push(cmd); return; }
+      const b: any = { type: "boost", booster: cmd.booster };
+      for (const k of ["tick", "owner", "node"]) {
+        if (typeof cmd[k] !== "number" || !Number.isFinite(cmd[k])) { this.bad.push(cmd); return; }
+        b[k] = Math.trunc(cmd[k]);
+      }
+      this.q.push(b as BoostCmd);
+      return;
+    }
     if (cmd === null || typeof cmd !== "object" || cmd.type !== "send") { this.bad.push(cmd); return; }
     const clean: any = { type: "send" };
     for (const k of NUM_KEYS) {
@@ -48,14 +63,18 @@ export class SimWorld {
     this.move();
     applyTowers(this);
     this.tick += 1;
+    this.effects = this.effects.filter((e) => e.until > this.tick);
   }
 
   private applyCommands(): void {
     for (const c of this.bad) this.reject(c, "bad_cmd");
     this.bad = [];
-    const keep: Cmd[] = [];
+    const keep: (Cmd | BoostCmd)[] = [];
     for (const c of this.q) {
-      if (c.tick === this.tick) this.applySend(c);
+      if (c.tick === this.tick) {
+        if (c.type === "boost") this.applyBoost(c);
+        else this.applySend(c);
+      }
       else if (c.tick > this.tick) keep.push(c);
       else this.reject(c, "past_tick");
     }
@@ -79,6 +98,28 @@ export class SimWorld {
     this.events.push({ type: "group_spawned", group: grp.id, owner: c.owner, count });
   }
 
+  private applyBoost(c: BoostCmd): void {
+    if (c.owner <= 0) return this.reject(c, "bad_owner");
+    if (!this.graph.hasNode(c.node)) return this.reject(c, "bad_node");
+    const e = { type: c.booster, owner: c.owner, node: c.node, until: this.tick + BOOST_TICKS[c.booster] };
+    this.effects.push(e);
+    this.events.push({ type: "boost_applied", booster: e.type, owner: e.owner, node: e.node });
+  }
+
+  hasEffect(type: string, owner: number, node: number): boolean {
+    return this.effects.some((e) => e.type === type && e.owner === owner && e.node === node && this.tick < e.until);
+  }
+
+  towerSilenced(n: { x: number; y: number; owner: number }): boolean {
+    for (const e of this.effects) {
+      if (e.type === "emp" && e.owner !== n.owner && this.tick < e.until) {
+        const t = this.graph.node(e.node);
+        if (Fx.dist(n.x, n.y, t.x, t.y) <= EMP_RANGE) return true;
+      }
+    }
+    return false;
+  }
+
   private reject(cmd: unknown, reason: string): void {
     this.events.push({ type: "cmd_rejected", reason, cmd });
   }
@@ -99,7 +140,8 @@ export class SimWorld {
   }
 
   private advance(g: Group): boolean {
-    g.progress += GROUP_SPEED;
+    const target = g.path[g.path.length - 1];
+    g.progress += this.hasEffect("rage", g.owner, target) ? Fx.idiv(GROUP_SPEED * 3, 2) : GROUP_SPEED;
     for (;;) {
       const a = g.path[g.seg], b = g.path[g.seg + 1];
       const len = this.graph.edgeLength(a, b);
@@ -114,6 +156,12 @@ export class SimWorld {
   private arrive(g: Group, nodeId: number): void {
     const n = this.graph.node(nodeId);
     this.events.push({ type: "group_arrived", group: g.id, node: nodeId });
+    const si = this.effects.findIndex((e) => e.type === "split" && e.owner === g.owner && e.node === nodeId && this.tick < e.until);
+    if (si >= 0) {
+      g.count *= 2;
+      this.effects.splice(si, 1);
+      this.events.push({ type: "split_applied", group: g.id, node: nodeId });
+    }
     if (n.owner === g.owner) { n.garrison += g.count; return; }
     if (n.trap > 0) {
       const kill = Math.min(n.trap, g.count);
@@ -150,6 +198,7 @@ export class SimWorld {
     for (const g of this.groups) {
       parts.push(`g${g.id},${g.owner},${g.count},${g.seg},${g.progress},${g.dmg_acc},${g.path.join("-")}`);
     }
+    for (const e of this.effects) parts.push(`e${e.type},${e.owner},${e.node},${e.until}`);
     return parts.join("|");
   }
 

@@ -1,9 +1,10 @@
 // Match rules (port of battle/match.gd).
 import { idiv } from "../sim/fx.ts";
-import { SimWorld, TICK_HZ } from "../sim/world.ts";
+import { SimWorld, TICK_HZ, BOOST_TICKS } from "../sim/world.ts";
 import { ATTACKER, DEFENDER } from "./attack_setup.ts";
 
 export const DURATION_TICKS = 180 * TICK_HZ;
+export const MAX_BOOSTS = 3;
 export type Result = { stars: number; destroyed_pct: number; loot: number; trophies: number };
 
 export class BattleMatch {
@@ -12,16 +13,31 @@ export class BattleMatch {
   private defenderIds: number[];
   private core: number;
   private pool: number;
+  boostsLeft: string[] = [];
 
-  constructor(world: SimWorld, core: number, pool: number) {
+  constructor(world: SimWorld, core: number, pool: number, loadout: unknown = []) {
     this.world = world;
+    for (const b of Array.isArray(loadout) ? loadout : []) {
+      if (typeof b === "string" && Object.hasOwn(BOOST_TICKS, b) && this.boostsLeft.length < MAX_BOOSTS) this.boostsLeft.push(b);
+    }
     this.core = core;
     this.pool = pool;
     this.defenderIds = world.graph.nodeIds().filter((id) => world.graph.node(id).owner === DEFENDER);
   }
 
+  /** Consumed when sent (even if the sim rejects the node): identical to battle/match.gd. */
+  boost(booster: unknown, node: unknown): boolean {
+    if (this.over || typeof booster !== "string") return false;
+    const i = this.boostsLeft.indexOf(booster);
+    if (i < 0) return false;
+    this.boostsLeft.splice(i, 1);
+    this.world.queue({ tick: this.world.tick, type: "boost", owner: ATTACKER, booster, node });
+    return true;
+  }
+
   sendRaw(c: any): void {
     if (this.over) return;
+    if (c && typeof c === "object" && c.type === "boost") { this.boost(c.booster, c.node); return; }
     this.world.queue({ tick: this.world.tick, type: "send", owner: ATTACKER,
       from: c?.from, to: c?.to, percent: c?.percent });
   }

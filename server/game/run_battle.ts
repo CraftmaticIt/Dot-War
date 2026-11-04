@@ -6,9 +6,9 @@ import { BattleMatch, type Result } from "./match.ts";
 export const MAX_COMMANDS = 2000;
 
 export function runBattle(defender: ColonyState, lootPool: number, dots: number, seed: number,
-  commands: unknown, surrenderTick = -1): { result: Result; hash: number; ticks: number } {
+  commands: unknown, surrenderTick = -1, loadout: unknown = []): { result: Result; hash: number; ticks: number } {
   const cmds = Array.isArray(commands) ? commands.slice(0, MAX_COMMANDS) : [];
-  const m = new BattleMatch(buildAttack(defender.toSimGraph(DEFENDER), dots, seed), defender.coreNodeId(), lootPool);
+  const m = new BattleMatch(buildAttack(defender.toSimGraph(DEFENDER), dots, seed), defender.coreNodeId(), lootPool, loadout);
   // Bucket commands by tick once (list order kept) instead of scanning all of them every tick.
   const byTick = new Map<number, unknown[]>();
   for (const c of cmds) {

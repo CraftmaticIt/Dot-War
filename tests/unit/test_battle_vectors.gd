@@ -21,7 +21,8 @@ func test_battle_vectors_replay():
 		for id in ids:
 			if ids[id] == Vector2i.ZERO:
 				core = id
-		var m := BattleMatch.new(AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), int(v.dots), int(v.seed)), core, pool)
+		var m := BattleMatch.new(AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), int(v.dots), int(v.seed)), core, pool,
+			v.get("loadout", []))
 		var stop := int(v.surrender_tick)
 		while not m.over:
 			if stop >= 0 and m.world.tick >= stop:

@@ -23,7 +23,7 @@ for (const f of files) {
     } else {
       defender = ColonyState.fromDict(v.defender)!;
     }
-    const r = runBattle(defender, v.loot_pool, v.dots, v.seed, v.commands, v.surrender_tick);
+    const r = runBattle(defender, v.loot_pool, v.dots, v.seed, v.commands, v.surrender_tick, v.loadout ?? []);
     assert.deepEqual(r.result, v.expected.result);
     assert.equal(r.ticks, v.expected.ticks);
     assert.equal(r.hash, v.expected.hash);
