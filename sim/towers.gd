@@ -14,7 +14,7 @@ static func apply(world: SimWorld) -> void:
 		pos[g.id] = world.group_pos(g)
 	for id in world.graph.node_ids():
 		var n := world.graph.node(id)
-		if n.tower == "" or n.owner == 0:
+		if n.tower == "" or n.owner == 0 or world.tower_silenced(n):
 			continue
 		var spec: Dictionary = SPECS[n.tower]
 		var dmg: int = spec.dmg * (2 + n.tower_lvl) / 3  # lvl 1 = base damage
@@ -30,14 +30,14 @@ static func apply(world: SimWorld) -> void:
 					target = g
 					best = d
 			if not target.is_empty():
-				_hit(target, dmg)
+				_hit(target, _shielded(world, target, dmg))
 		else:
 			for g in world.groups:
 				if g.owner == n.owner or g.count <= 0:
 					continue
 				var p: Vector2i = pos[g.id]
 				if Fx.dist(n.x, n.y, p.x, p.y) <= spec.range:
-					_hit(g, dmg)
+					_hit(g, _shielded(world, g, dmg))
 	var alive: Array[Dictionary] = []
 	for g in world.groups:
 		if g.count > 0:
@@ -45,6 +45,9 @@ static func apply(world: SimWorld) -> void:
 		else:
 			world.events.append({"type": "group_destroyed", "group": g.id})
 	world.groups = alive
+
+static func _shielded(world: SimWorld, g: Dictionary, dmg: int) -> int:
+	return dmg * 2 / 5 if world.has_effect("shield", g.owner, g.path[g.path.size() - 1]) else dmg
 
 static func _hit(g: Dictionary, dmg: int) -> void:
 	g.dmg_acc += dmg

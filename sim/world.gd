@@ -9,6 +9,8 @@ var rng: SimRng
 var tick := 0
 ## Group: {id, owner, count, path: PackedInt32Array, seg, progress, dmg_acc}
 var groups: Array[Dictionary] = []
+## Active booster effects: {type, owner, node, until} (active while tick < until).
+var effects: Array[Dictionary] = []
 var events: Array[Dictionary] = []
 
 var _queue: Array[Dictionary] = []
@@ -16,6 +18,9 @@ var _bad: Array[Dictionary] = []   # malformed commands, reported on the next st
 var _next_group_id := 0
 
 const NUM_KEYS := ["tick", "owner", "from", "to", "percent"]
+const BOOST_KEYS := ["tick", "owner", "node"]
+const BOOST_TICKS := {"rage": 160, "shield": 120, "emp": 80, "split": 200}
+const EMP_RANGE := 3000
 
 func _init(p_graph: SimGraph, seed: int) -> void:
 	graph = p_graph
@@ -24,7 +29,22 @@ func _init(p_graph: SimGraph, seed: int) -> void:
 ## Commands are untrusted (replays come from clients). Malformed ones are rejected,
 ## never crash: every numeric key must exist and be a number (JSON gives floats).
 func queue(cmd: Dictionary) -> void:
-	if String(cmd.get("type", "")) != "send":
+	var t = cmd.get("type", "")
+	if typeof(t) == TYPE_STRING and t == "boost":
+		var b = cmd.get("booster")
+		if typeof(b) != TYPE_STRING or not BOOST_TICKS.has(b):
+			_bad.append(cmd)
+			return
+		var cb := {"type": "boost", "booster": String(b)}
+		for k in BOOST_KEYS:
+			var v = cmd.get(k)
+			if typeof(v) != TYPE_INT and typeof(v) != TYPE_FLOAT:
+				_bad.append(cmd)
+				return
+			cb[k] = int(v)
+		_queue.append(cb)
+		return
+	if typeof(t) != TYPE_STRING or t != "send":
 		_bad.append(cmd)
 		return
 	var clean := {"type": "send"}
@@ -43,6 +63,11 @@ func step() -> void:
 	_move()
 	_towers()
 	tick += 1
+	var live: Array[Dictionary] = []
+	for e in effects:
+		if e.until > tick:
+			live.append(e)
+	effects = live
 
 func _apply_commands() -> void:
 	for cmd in _bad:
@@ -63,6 +88,8 @@ func _apply(cmd: Dictionary) -> void:
 	match String(cmd.get("type", "")):
 		"send":
 			_apply_send(cmd)
+		"boost":
+			_apply_boost(cmd)
 		_:
 			_reject(cmd, "unknown_type")
 
@@ -93,6 +120,32 @@ func _apply_send(cmd: Dictionary) -> void:
 	groups.append(g)
 	events.append({"type": "group_spawned", "group": g.id, "owner": owner, "count": count})
 
+func _apply_boost(cmd: Dictionary) -> void:
+	if int(cmd.owner) <= 0:
+		return _reject(cmd, "bad_owner")
+	if not graph.has_node(int(cmd.node)):
+		return _reject(cmd, "bad_node")
+	var e := {"type": cmd.booster, "owner": int(cmd.owner), "node": int(cmd.node),
+		"until": tick + int(BOOST_TICKS[cmd.booster])}
+	effects.append(e)
+	events.append({"type": "boost_applied", "booster": e.type, "owner": e.owner, "node": e.node})
+
+## True when an effect of `type` by `owner` targets `node` right now.
+func has_effect(type: String, owner: int, node: int) -> bool:
+	for e in effects:
+		if e.type == type and e.owner == owner and e.node == node and tick < e.until:
+			return true
+	return false
+
+## True when an enemy EMP covers the tower at node `n`.
+func tower_silenced(n: Dictionary) -> bool:
+	for e in effects:
+		if e.type == "emp" and e.owner != n.owner and tick < e.until:
+			var t := graph.node(e.node)
+			if Fx.dist(n.x, n.y, t.x, t.y) <= EMP_RANGE:
+				return true
+	return false
+
 func _reject(cmd: Dictionary, reason: String) -> void:
 	events.append({"type": "cmd_rejected", "reason": reason, "cmd": cmd})
 
@@ -116,7 +169,8 @@ func _move() -> void:
 
 ## Returns true when the group was consumed by a node this tick.
 func _advance(g: Dictionary) -> bool:
-	g.progress += GROUP_SPEED
+	var target: int = g.path[g.path.size() - 1]
+	g.progress += GROUP_SPEED * 3 / 2 if has_effect("rage", g.owner, target) else GROUP_SPEED
 	while true:
 		var a: int = g.path[g.seg]
 		var b: int = g.path[g.seg + 1]
@@ -134,6 +188,13 @@ func _advance(g: Dictionary) -> bool:
 func _arrive(g: Dictionary, node_id: int) -> void:
 	var n := graph.node(node_id)
 	events.append({"type": "group_arrived", "group": g.id, "node": node_id})
+	for i in effects.size():
+		var e: Dictionary = effects[i]
+		if e.type == "split" and e.owner == g.owner and e.node == node_id and tick < e.until:
+			g.count *= 2
+			effects.remove_at(i)
+			events.append({"type": "split_applied", "group": g.id, "node": node_id})
+			break
 	if n.owner == g.owner:
 		n.garrison += g.count
 		return
@@ -177,6 +238,8 @@ func canonical() -> String:
 		for v in g.path:
 			p.append(str(v))
 		parts.append("g%d,%d,%d,%d,%d,%d,%s" % [g.id, g.owner, g.count, g.seg, g.progress, g.dmg_acc, "-".join(p)])
+	for e in effects:  # absent when no booster is active: older vectors keep their hashes
+		parts.append("e%s,%d,%d,%d" % [e.type, e.owner, e.node, e.until])
 	return "|".join(parts)
 
 ## FNV-1a 32-bit over the UTF-8 bytes of canonical().

@@ -80,4 +80,17 @@ func _init() -> void:
 	g.add_node(4, 12000, 0, 2, 40, 1)
 	g.link(1, 2); g.link(2, 4); g.link(2, 3)
 	_write("v006_armed_trap_pulse_lvl", g, 6, [_cmd(0, 1, 1, 2, 50), _cmd(20, 1, 1, 2, 50), _cmd(45, 1, 1, 2, 100)], 120)
+	# v007: boosters — rage + shield on a lane past a laser, emp on a pulse, split on capture.
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 90, 2)
+	g.add_node(2, 9000, 0, 2, 20, 1)
+	g.add_node(3, 4500, 1500, 2, 5, 0, "laser", 0, 2)
+	g.add_node(4, 9000, 6000, 2, 15, 0, "pulse", 0, 3)
+	g.link(1, 2); g.link(2, 4); g.link(1, 3)
+	var cmds := [_cmd(0, 1, 1, 2, 40), {"tick": 0, "type": "boost", "owner": 1, "booster": "rage", "node": 2},
+		{"tick": 1, "type": "boost", "owner": 1, "booster": "shield", "node": 2},
+		_cmd(30, 1, 1, 2, 50), {"tick": 40, "type": "boost", "owner": 1, "booster": "split", "node": 2},
+		{"tick": 90, "type": "boost", "owner": 1, "booster": "emp", "node": 4}, _cmd(100, 1, 2, 4, 100),
+		{"tick": 101, "type": "boost", "owner": 2, "booster": "nuke", "node": 4}]
+	_write("v007_boosts", g, 7, cmds, 150)
 	quit()
