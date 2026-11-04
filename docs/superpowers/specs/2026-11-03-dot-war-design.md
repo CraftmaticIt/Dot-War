@@ -61,6 +61,11 @@ Każdy budynek: 5 poziomów w MVP, koszt Energii + czas budowy.
 - Źródła boosterów: zadania dzienne, skrzynki, sklep za Kryształy.
 - Liga: progi trofeów (Brąz/Srebro/Złoto/Platyna/Diament), sezon 14 dni, nagroda w Kryształach za ligę, miękki reset (nadwyżka ponad 1000 trofeów o połowę); rozliczenie leniwe przy pierwszym żądaniu po końcu sezonu.
 
+### Decyzje etapu 6 (właściciel, 2026-11-04)
+
+- Kampania: obrona z limitem budynków, 15 poziomów, kryształy za nowe gwiazdki. Arena tygodnia z rankingiem
+  (replay na serwerze), 4 typy wrogich kropek. Szczegóły: `2026-11-04-stage6-pve-design.md`.
+
 ## 4. Ekonomia
 
 - **Energia** — z kopalń; budowa/ulepszenia. Łupiona w ataku (max 20% niechronionej).
