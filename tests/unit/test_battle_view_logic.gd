@@ -105,3 +105,40 @@ func test_online_pending_uses_snapshot_and_records_commands():
 	v.battle.step()
 	v.surrender_now()
 	assert_eq(v.surrender_tick, 1)
+
+class FailTransport extends Transport:
+	func request(_m: String, url: String, _h: PackedStringArray, _b: String) -> Dictionary:
+		if url.ends_with("/auth/v1/signup"):
+			return {"status": 200, "body": JSON.stringify({"access_token": "t", "refresh_token": "r", "user": {"id": "u"}})}
+		return {"status": 409, "body": JSON.stringify({"error": "abandoned"})}
+
+func _online_view() -> Node2D:
+	var c := ColonyState.new_default(1_800_000_000)
+	c.energy = 300
+	BV.pending = {"colony": c, "dots": 30, "seed": 4, "snapshot": ColonyState.new_default(1_800_000_000).to_dict(),
+		"loot_pool": 400, "attack_id": "id-1"}
+	var v: Node2D = BV.new()
+	v.save_enabled = false
+	v.backend = Backend.new(FailTransport.new(), {"url": "https://x", "anon_key": "k"}, "user://test_auth_fail.json")
+	add_child_autofree(v)
+	return v
+
+func test_server_error_applies_no_local_loot():
+	var v := _online_view()
+	v.battle.surrender()
+	await v._show_end()
+	assert_eq(v.colony.energy, 300, "server rejected the attack: no local loot")
+
+func test_small_percent_still_sends_one_dot():
+	var v := _online_view()
+	var e := 1001
+	v.battle.world.graph.node(e).garrison = 2
+	v.send_cmd(e, 1, 25)   # 2*25/100 = 0 -> sends everything instead of nothing
+	assert_eq(v.commands[0].percent, 100)
+
+func test_surrender_needs_confirmation():
+	var v := _online_view()
+	assert_false(v.request_surrender(), "first tap only asks")
+	assert_false(v.battle.over)
+	assert_true(v.request_surrender())
+	assert_true(v.battle.over)

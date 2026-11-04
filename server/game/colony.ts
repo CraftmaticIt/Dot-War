@@ -8,6 +8,14 @@ import { SimGraph } from "../sim/graph.ts";
 export type Cell = { type: string; level: number; build_end: number; target_level: number };
 export const SAVE_VERSION = 1;
 export const OFFLINE_CAP_SECS = 8 * 3600;
+export const GRID_RADIUS = 4;
+const KEY_RE = /^(0|-?[1-9][0-9]{0,2}),(0|-?[1-9][0-9]{0,2})$/;
+export const hexDistance = (q: number, r: number) => idiv(Math.abs(q) + Math.abs(r) + Math.abs(q + r), 2);
+function validKey(k: string): boolean {
+  if (!KEY_RE.test(k)) return false;
+  const [q, r] = Hex.parse(k);
+  return hexDistance(q, r) <= GRID_RADIUS;
+}
 
 const INT_FIELDS: [string, keyof ColonyState][] = [
   ["energy", "energy"], ["crystals", "crystals"], ["dots", "dots"], ["last_collect", "lastCollect"],
@@ -94,7 +102,8 @@ export class ColonyState {
     return out;
   }
 
-  /** null for unusable data (wrong shape, unknown/future version, no core). */
+  /** Hostile/corrupt input never throws: bad cells dropped, numbers clamped. null when there
+   *  is no single core at 0,0 or the format is unknown. Mirrors meta/colony.gd from_dict. */
   static fromDict(d: any): ColonyState | null {
     if (d === null || typeof d !== "object" || Array.isArray(d)) return null;
     if (d.cells === null || typeof d.cells !== "object" || Array.isArray(d.cells)) return null;
@@ -103,24 +112,25 @@ export class ColonyState {
     const c = new ColonyState();
     for (const k of Object.keys(d.cells)) {
       const cell = d.cells[k];
-      if (cell === null || typeof cell !== "object" || typeof cell.type !== "string" || !B.isType(cell.type)) continue;
-      const [q, r] = Hex.parse(k);
-      const n = (v: unknown) => (isNum(v) ? Math.trunc(v) : 0);
-      c.cells[Hex.key(q, r)] = {
-        type: cell.type,
-        level: clamp(n(cell.level), 0, B.MAX_LEVEL),
-        build_end: n(cell.build_end),
-        target_level: clamp(n(cell.target_level), 0, B.MAX_LEVEL),
-      };
+      if (!validKey(k) || cell === null || typeof cell !== "object") continue;
+      if (typeof cell.type !== "string" || !B.isType(cell.type)) continue;
+      if (!isNum(cell.level) || !isNum(cell.target_level) || !isNum(cell.build_end ?? 0)) continue;
+      const lvl = clamp(Math.trunc(cell.level), 0, B.MAX_LEVEL);
+      c.cells[k] = { type: cell.type, level: lvl, build_end: Math.max(0, Math.trunc(cell.build_end ?? 0)),
+        target_level: clamp(Math.trunc(cell.target_level), lvl, B.MAX_LEVEL) };
     }
-    if (!Object.values(c.cells).some((x) => x.type === "core")) return null;
-    for (const [j, f] of INT_FIELDS) (c as any)[f] = isNum(d[j]) ? Math.trunc(d[j]) : 0;
+    const cores = Object.values(c.cells).filter((x) => x.type === "core").length;
+    if (cores !== 1 || c.cells["0,0"]?.type !== "core") return null;
+    for (const [j, f] of INT_FIELDS) (c as any)[f] = isNum(d[j]) ? Math.max(0, Math.trunc(d[j])) : 0;
+    c.energyRem = Math.min(c.energyRem, 3599);
+    c.dotsRem = Math.min(c.dotsRem, 3599);
+    c.attackOpen = Math.min(c.attackOpen, 1);
     return c;
   }
 
-  /** node id -> [q, r], ids 1..n over built cells in sorted (q, r) order. */
+  /** node id -> [q, r], ids 1..n over all cells in sorted (q, r) order. */
   snapshotIds(): Map<number, [number, number]> {
-    const built = Object.keys(this.cells).filter((k) => this.cells[k].level >= 1).map(Hex.parse);
+    const built = Object.keys(this.cells).map(Hex.parse);
     built.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     return new Map(built.map((h, i) => [i + 1, h]));
   }
@@ -133,8 +143,8 @@ export class ColonyState {
       const cell = this.cells[Hex.key(q, r)];
       const pos = Hex.toFx(q, r);
       const t = cell.type, l = cell.level;
-      g.addNode(id, pos.x, pos.y, owner, B.garrison(t, l), B.battleProd(t, l), B.tower(t), B.trapDmg(t, l),
-        B.tower(t) !== "" ? l : 1);
+      const tw = l >= 1 ? B.tower(t) : "";
+      g.addNode(id, pos.x, pos.y, owner, B.garrison(t, l), B.battleProd(t, l), tw, B.trapDmg(t, l), tw !== "" ? l : 1);
       byHex.set(Hex.key(q, r), id);
     }
     for (const [id, [q, r]] of ids) {

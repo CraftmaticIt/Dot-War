@@ -6,8 +6,8 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      ON_MAIN: ${{ github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -23,12 +23,15 @@ jobs:
       - run: ./scripts/install_godot.sh
       - name: Sim benchmark (headless)
         run: .tools/godot --headless --path . res://game/benchmark.tscn -- --sim-only
+      # Online builds only from main: the account-wide management token never reaches other branches.
       - uses: supabase/setup-cli@v1
-        if: env.SUPABASE_PROJECT_REF != ''
+        if: env.SUPABASE_PROJECT_REF != '' && env.ON_MAIN == 'true'
         with:
-          version: latest
+          version: 3.0.0
       - name: Backend config for the client (public URL + anon key)
-        if: env.SUPABASE_PROJECT_REF != ''
+        if: env.SUPABASE_PROJECT_REF != '' && env.ON_MAIN == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           KEY="$(supabase projects api-keys --remote="$SUPABASE_PROJECT_REF" --reveal -o json | jq -r 'first(.. | objects | select(.name? == "anon") | .api_key)')"
           test -n "$KEY" && test "$KEY" != "null"

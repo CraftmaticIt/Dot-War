@@ -3,6 +3,7 @@ class_name ColonyState
 ## always passed in as `now` (unix seconds) so the same logic can run on the server.
 
 const BUILDERS := 2
+const GRID_RADIUS := 4
 const OFFLINE_CAP_SECS := 8 * 3600
 
 ## Hex.key -> {type, level, build_end (0 = idle), target_level}
@@ -56,6 +57,8 @@ func can_place(type: String, q: int, r: int, now: int) -> String:
 		return "core_unique"
 	if cells.has(Hex.key(q, r)):
 		return "occupied"
+	if Hex.distance(Vector2i(q, r), Vector2i.ZERO) > GRID_RADIUS:
+		return "out_of_grid"
 	if not _adjacent_to_colony(q, r):
 		return "not_adjacent"
 	if cells.size() >= Buildings.max_nodes(core_level()):
@@ -210,42 +213,56 @@ func to_dict() -> Dictionary:
 
 ## Builds from a dict (JSON numbers arrive as floats). Unknown building types are dropped.
 ## Returns null when the data is not a usable colony (no core).
+static func _num(v) -> bool:
+	return typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT
+
+## Strict cell key: "q,r" integers without leading zeros, inside the grid.
+static func _valid_key(k: String) -> bool:
+	var re := RegEx.create_from_string("^(0|-?[1-9][0-9]{0,2}),(0|-?[1-9][0-9]{0,2})$")
+	return re.search(k) != null and Hex.distance(Hex.parse(k), Vector2i.ZERO) <= GRID_RADIUS
+
+## Builds from a dict (JSON numbers arrive as floats). Hostile/corrupt input never crashes:
+## bad cells are dropped, numbers clamped. Returns null when there is no single core at 0,0
+## or the format is unknown. Mirrored in server/game/colony.ts.
 static func from_dict(d) -> ColonyState:
 	if typeof(d) != TYPE_DICTIONARY or typeof(d.get("cells")) != TYPE_DICTIONARY:
 		return null
 	var ver = d.get("version", 1)
-	if (typeof(ver) != TYPE_INT and typeof(ver) != TYPE_FLOAT) or int(ver) > SAVE_VERSION:
+	if not _num(ver) or int(ver) > SAVE_VERSION:
 		return null  # unknown/future format: never guess
 	var c := ColonyState.new()
 	for k in d.cells:
 		var cell = d.cells[k]
-		if typeof(cell) != TYPE_DICTIONARY or not Buildings.is_type(String(cell.get("type", ""))):
+		if typeof(k) != TYPE_STRING or not _valid_key(k) or typeof(cell) != TYPE_DICTIONARY:
 			continue
-		var p := Hex.parse(String(k))
-		c.cells[Hex.key(p.x, p.y)] = {
-			"type": String(cell.type),
-			"level": clampi(int(cell.get("level", 0)), 0, Buildings.MAX_LEVEL),
-			"build_end": int(cell.get("build_end", 0)),
-			"target_level": clampi(int(cell.get("target_level", 0)), 0, Buildings.MAX_LEVEL),
-		}
-	var has_core := false
+		if typeof(cell.get("type")) != TYPE_STRING or not Buildings.is_type(cell.type):
+			continue
+		if not (_num(cell.get("level")) and _num(cell.get("target_level")) and _num(cell.get("build_end", 0))):
+			continue
+		var lvl := clampi(int(cell.level), 0, Buildings.MAX_LEVEL)
+		c.cells[k] = {"type": String(cell.type), "level": lvl, "build_end": maxi(0, int(cell.get("build_end", 0))),
+			"target_level": clampi(int(cell.target_level), lvl, Buildings.MAX_LEVEL)}
+	var cores := 0
 	for k in c.cells:
 		if c.cells[k].type == "core":
-			has_core = true
-	if not has_core:
+			cores += 1
+	if cores != 1 or not c.cells.has("0,0") or c.cells["0,0"].type != "core":
 		return null
 	for f in _INT_FIELDS:
 		var v = d.get(f, 0)
-		c.set(f, int(v) if typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT else 0)
+		c.set(f, maxi(0, int(v)) if _num(v) else 0)
+	c.energy_rem = mini(c.energy_rem, 3599)
+	c.dots_rem = mini(c.dots_rem, 3599)
+	c.attack_open = mini(c.attack_open, 1)
 	return c
 
-## node id -> hex, ids 1..n over built cells (level >= 1) in sorted (q, r) order.
+## node id -> hex, ids 1..n over all cells in sorted (q, r) order (cells under first
+## construction become empty nodes so the colony graph stays connected).
 ## Same ids as to_sim_graph(); the battle UI uses it to map nodes back to hexes.
 func snapshot_ids() -> Dictionary:
 	var built: Array[Vector2i] = []
 	for k in cells:
-		if cells[k].level >= 1:
-			built.append(Hex.parse(k))
+		built.append(Hex.parse(k))
 	built.sort_custom(func(a, b): return a.x < b.x or (a.x == b.x and a.y < b.y))
 	var out := {}
 	for i in built.size():
@@ -264,8 +281,9 @@ func to_sim_graph(owner: int) -> SimGraph:
 		var pos := Hex.to_fx(h.x, h.y)
 		var t: String = cell.type
 		var lvl: int = cell.level
+		var tw := Buildings.tower(t) if lvl >= 1 else ""
 		g.add_node(id, pos.x, pos.y, owner, Buildings.garrison(t, lvl), Buildings.battle_prod(t, lvl),
-			Buildings.tower(t), Buildings.trap_dmg(t, lvl), lvl if Buildings.tower(t) != "" else 1)
+			tw, Buildings.trap_dmg(t, lvl), lvl if tw != "" else 1)
 		by_hex[h] = id
 	for id in ids:
 		var h: Vector2i = ids[id]

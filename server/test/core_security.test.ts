@@ -146,7 +146,7 @@ test("I3: downgrade, core limit, isolated cells, builders rejected", async () =>
   lim.energy -= 300;
   assert.equal((await syncColony(repo, "u", lim.toDict(), T0 + 10)).reason, "core_limit");
   const iso = ColonyState.fromDict(base.toDict())!;
-  iso.cells["3,3"] = { type: "wall", level: 0, build_end: T0 + 20, target_level: 1 };
+  iso.cells["3,0"] = { type: "wall", level: 0, build_end: T0 + 20, target_level: 1 };
   iso.energy -= 50;
   assert.equal((await syncColony(repo, "u", iso.toDict(), T0 + 10)).reason, "not_connected");
   const busy = ColonyState.fromDict(base.toDict())!;
@@ -174,4 +174,18 @@ test("I6: traps are disguised in the snapshot sent to the attacker", async () =>
   assert.ok(!Object.values(f.snapshot.cells).some((c: any) => c.type === "trap"));
   const row = await repo.getAttack(f.attack_id!);
   assert.equal(row!.snapshot.cells["0,1"].type, "trap", "server keeps the real snapshot");
+});
+
+test("practice attack: always a bot, no loot or trophies", async () => {
+  const repo = new MemoryRepo();
+  await seeded(repo, "a", 100, 300);
+  await seeded(repo, "real", 100, 0, 2000);
+  const f = await findOpponent(repo, "a", T0, rand, () => repo.newId(), true);
+  assert.equal((await repo.getAttack(f.attack_id!))!.defender, null);
+  assert.equal(f.bot?.practice, true);
+  const r = await finishAttack(repo, "a", f.attack_id!, allCmds, -1, T0 + 10);
+  assert.equal(r.result!.loot, 0);
+  assert.equal(r.result!.trophies, 0);
+  assert.equal((await repo.getPlayer("a"))!.trophies, 100);
+  assert.equal((await stored(repo, "real")).energy, 2000);
 });

@@ -14,7 +14,7 @@ const ABANDON_RESULT = { stars: 0, destroyed_pct: 0, loot: 0, trophies: ABANDON_
 
 export type FindResult = {
   error?: string; attack_id?: string; snapshot?: any; loot_pool?: number; seed?: number; dots?: number;
-  bot?: { trophies: number; seed: number } | null;
+  bot?: { trophies: number; seed: number; practice?: boolean } | null;
 };
 
 /** Atomic: only the request that flips open -> abandoned applies the penalty. */
@@ -36,8 +36,9 @@ export function disguise(snapshot: any): any {
   return s;
 }
 
+/** practice = bot only, no loot/trophies (used by the live smoke test; never touches players). */
 export async function findOpponent(repo: Repo, uid: string, now: number, rand: () => number,
-  newId: () => string = () => crypto.randomUUID()): Promise<FindResult> {
+  newId: () => string = () => crypto.randomUUID(), practice = false): Promise<FindResult> {
   await resolveStale(repo, now);
   for (const a of await repo.openAttacksBy(uid)) await abandon(repo, a.id, now);  // a new attack forfeits the old one
   const p = await repo.getPlayer(uid);
@@ -45,7 +46,7 @@ export async function findOpponent(repo: Repo, uid: string, now: number, rand: (
   const dots = await repo.consumeDots(uid, MIN_ATTACK_DOTS);  // atomic: parallel finds cannot reuse dots
   if (dots < 0) return { error: "few_dots" };
 
-  const cands = await repo.candidates(p.trophies - RANGE, p.trophies + RANGE, uid, now, MAX_CANDIDATES);
+  const cands = practice ? [] : await repo.candidates(p.trophies - RANGE, p.trophies + RANGE, uid, now, MAX_CANDIDATES);
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [cands[i], cands[j]] = [cands[j], cands[i]];
@@ -63,7 +64,7 @@ export async function findOpponent(repo: Repo, uid: string, now: number, rand: (
   if (!row) {
     const seed = (p.attacks + 1) * 7919 + p.trophies;
     const bot = BotColony.generate(p.trophies, seed);
-    row = { ...base, id: newId(), defender: null, bot: { trophies: p.trophies, seed }, snapshot: bot.colony.toDict(),
+    row = { ...base, id: newId(), defender: null, bot: practice ? { trophies: p.trophies, seed, practice: true } : { trophies: p.trophies, seed }, snapshot: bot.colony.toDict(),
       seed, loot_pool: bot.lootPool };
     if (!(await repo.insertAttack(row))) return { error: "busy" };
   }

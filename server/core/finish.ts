@@ -22,7 +22,8 @@ export async function finishAttack(repo: Repo, uid: string, attackId: unknown, c
   const defender = ColonyState.fromDict(a.snapshot)!;
   const st = typeof surrenderTick === "number" && Number.isFinite(surrenderTick) ? Math.trunc(surrenderTick) : -1;
   const cmds = Array.isArray(commands) ? commands.slice(0, MAX_COMMANDS) : [];
-  const { result } = runBattle(defender, a.loot_pool, a.dots, a.seed, cmds, st);
+  const replay = runBattle(defender, a.loot_pool, a.dots, a.seed, cmds, st).result;
+  const result = a.bot?.practice ? { ...replay, loot: 0, trophies: 0 } : replay;
   await repo.completeAttack(a.id, result, cmds, now);
   await repo.adjustPlayer(uid, result.trophies, 0, null);
   await repo.creditEnergy(uid, result.loot, true);

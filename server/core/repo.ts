@@ -7,7 +7,7 @@ export type Player = { id: string; trophies: number; attacks: number; crystals: 
 export type ColonyRow = { data: any; synced_at: number; rev: number };
 export type AttackStatus = "open" | "settling" | "done" | "abandoned";
 export type AttackRow = {
-  id: string; attacker: string; defender: string | null; bot: { trophies: number; seed: number } | null;
+  id: string; attacker: string; defender: string | null; bot: { trophies: number; seed: number; practice?: boolean } | null;
   snapshot: any; dots: number; seed: number; loot_pool: number; status: AttackStatus;
   commands: any; result: any; created_at: number; finished_at: number | null;
 };

@@ -23,6 +23,9 @@ var attack_id := ""
 var commands: Array = []
 var surrender_tick := -1
 var backend: Backend = null
+var _give_up: Button = null
+var _save_failed := false
+const MAX_FRAME_CATCHUP := 0.25  # never fast-forward more than this after a long frame/resume
 var _acc := 0.0
 var _hud: Label
 var _end: VBoxContainer
@@ -98,8 +101,23 @@ func _start(defender: ColonyState, loot_pool: int, dots: int, seed: int) -> void
 func send_cmd(from: int, to: int, pct: int) -> void:
 	if battle.over:
 		return
+	var g := battle.world.graph
+	if g.has_node(from) and g.node(from).garrison * pct / 100 == 0:
+		pct = 100  # a small node would send nothing at this %: send what it has
 	commands.append({"tick": battle.world.tick, "from": from, "to": to, "percent": pct})
 	battle.send(from, to, pct)
+
+var _confirm_left := 0.0
+
+## Two taps within 3 s: the first only asks ("Na pewno?").
+func request_surrender() -> bool:
+	if _confirm_left <= 0.0:
+		_confirm_left = 3.0
+		if _give_up:
+			_give_up.text = "Na pewno?"
+		return false
+	surrender_now()
+	return true
 
 func surrender_now() -> void:
 	if not battle.over:
@@ -174,7 +192,8 @@ func _build_ui() -> void:
 	give_up.text = "Poddaj się"
 	give_up.custom_minimum_size = Vector2(140, 44)
 	give_up.position = Vector2(1124, 660)
-	give_up.pressed.connect(surrender_now)
+	give_up.pressed.connect(request_surrender)
+	_give_up = give_up
 	layer.add_child(give_up)
 	_end = VBoxContainer.new()
 	_end.position = Vector2(440, 220)
@@ -185,8 +204,12 @@ func _build_ui() -> void:
 func _process(delta: float) -> void:
 	if battle == null:
 		return
+	if _confirm_left > 0.0:
+		_confirm_left -= delta
+		if _confirm_left <= 0.0 and _give_up:
+			_give_up.text = "Poddaj się"
 	if not battle.over:
-		_acc += delta
+		_acc = minf(_acc + delta, MAX_FRAME_CATCHUP)
 		var dt := 1.0 / SimWorld.TICK_HZ
 		while _acc >= dt and not battle.over:
 			_acc -= dt
@@ -234,9 +257,13 @@ func _apply_once(r: Dictionary) -> Dictionary:
 		var sr := await backend.finish_attack(attack_id, commands, surrender_tick)
 		if typeof(sr.get("result")) == TYPE_DICTIONARY:
 			r = sr.result
+		elif sr.has("error"):
+			# The server refused (e.g. attack expired): nothing is credited locally either.
+			r = {"stars": 0, "destroyed_pct": int(r.get("destroyed_pct", 0)), "loot": 0, "trophies": 0}
 	colony.apply_result(r)
 	if save_enabled and SaveStore.save(colony) != OK:
 		push_warning("BattleView: save failed")
+		_save_failed = true
 	return r
 
 func _show_end() -> void:
@@ -249,6 +276,11 @@ func _show_end() -> void:
 	_end.add_child(wait)
 	var r: Dictionary = await _apply_once(battle.result())
 	wait.queue_free()
+	if _save_failed:
+		var warn := Label.new()
+		warn.text = "Nie udało się zapisać gry!"
+		warn.add_theme_color_override("font_color", Color("#FF2E88"))
+		_end.add_child(warn)
 	for t in ["Zwycięstwo!" if r.stars > 0 else "Porażka", stars_text(r.stars),
 			"Zniszczono %d%%" % r.destroyed_pct, "Łup: +%d energii" % r.loot, "Trofea: %+d" % r.trophies]:
 		var l := Label.new()

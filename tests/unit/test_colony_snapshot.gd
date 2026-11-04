@@ -34,10 +34,10 @@ func test_snapshot_positions_from_hex():
 			found = true
 	assert_true(found, "mine at hex (1,0)")
 
-func test_snapshot_skips_unbuilt():
+func test_snapshot_includes_unbuilt_as_empty():
 	var c := _c()
 	c.cells["-1,0"] = {"type": "wall", "level": 0, "build_end": T0 + 5, "target_level": 1}
-	assert_eq(c.to_sim_graph(1).node_ids().size(), 3)
+	assert_eq(c.to_sim_graph(1).node_ids().size(), 4)
 
 func test_snapshot_ids_stable():
 	var c := _c()

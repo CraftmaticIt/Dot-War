@@ -53,6 +53,12 @@ static func cell_at(px: Vector2, o: Vector2) -> Vector2i:
 		r = -q - s
 	return Vector2i(q, r)
 
+static func few_dots_text(c: ColonyState) -> String:
+	for k in c.cells:
+		if c.cells[k].type == "generator" and c.cells[k].level >= 1:
+			return "Za mało kropek (%d/%d) – Generator produkuje dalej" % [c.dots, ColonyState.MIN_ATTACK_DOTS]
+	return "Za mało kropek – zbuduj Generator"
+
 static func format_secs(s: int) -> String:
 	if s < 60:
 		return "%ds" % s
@@ -192,8 +198,7 @@ func _on_attack() -> void:
 		var res := await backend.find_opponent()
 		if not res.has("offline"):
 			if res.has("error"):
-				_show_toast("Za mało kropek (min %d)" % ColonyState.MIN_ATTACK_DOTS if res.error == "few_dots"
-					else "Serwer: %s" % res.error)
+				_show_toast(few_dots_text(colony) if res.error == "few_dots" else "Serwer: %s" % res.error)
 				return
 			colony.dots = 0
 			colony.dots_rem = 0
@@ -206,7 +211,7 @@ func _on_attack() -> void:
 			return
 	var a := colony.begin_attack(_now())
 	if a.has("error"):
-		_show_toast("Za mało kropek (min %d) – zbuduj Generator" % ColonyState.MIN_ATTACK_DOTS)
+		_show_toast(few_dots_text(colony))
 		return
 	_save()
 	BattleView.pending = {"colony": colony, "dots": a.dots, "seed": a.seed}
@@ -253,8 +258,8 @@ func _process(delta: float) -> void:
 			get_tree().quit()
 
 func _unhandled_input(e: InputEvent) -> void:
-	var tap: bool = (e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed) \
-		or (e is InputEventScreenTouch and e.pressed)
+	# Touch arrives as emulated mouse too (emulate_mouse_from_touch): handle the mouse event only.
+	var tap: bool = e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed
 	if not tap:
 		return
 	var h := cell_at(e.position, origin)
@@ -339,6 +344,8 @@ func _label(text: String, size := 18, color := Color.WHITE) -> Label:
 func _button(state: Callable, cb: Callable) -> void:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(300, 44)
+	b.size = Vector2(300, 44)
+	b.clip_text = true
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.pressed.connect(cb)
 	_panel.add_child(b)
@@ -383,7 +390,7 @@ func _panel_build_menu(now: int) -> void:
 static func _err_text(code: String) -> String:
 	return {"": "", "no_energy": "brak energii", "no_builder": "brak budowniczych",
 		"node_limit": "limit węzłów", "core_limit": "ulepsz Rdzeń", "max_level": "maks. poziom",
-		"busy": "w budowie", "occupied": "zajęte", "not_adjacent": "za daleko"}.get(code, code)
+		"busy": "w budowie", "occupied": "zajęte", "not_adjacent": "za daleko", "out_of_grid": "poza mapą"}.get(code, code)
 
 func _act(err: String) -> void:
 	if err != "":
@@ -426,7 +433,9 @@ func _draw_cell(h: Vector2i, now: int) -> void:
 		draw_colored_polygon(pts, Color(PLAYER, 0.10 if building else 0.18))
 		if building:
 			for i in 6:
-				draw_line(pts[i], pts[i].lerp(pts[i + 1], 0.5), PLAYER, 2.0, true)
+				draw_line(pts[i], pts[i].lerp(pts[i + 1], 0.5), PLAYER, 3.0 if is_sel else 2.0, true)
+			if is_sel:
+				draw_polyline(_hex_points(c, HEX_PX + 1), Color.WHITE, 1.5, true)
 		else:
 			draw_polyline(pts, PLAYER, 3.0 if is_sel else 2.0, true)
 		_text(c + Vector2(0, -2), LETTERS[cell.type], 24, Color.WHITE)

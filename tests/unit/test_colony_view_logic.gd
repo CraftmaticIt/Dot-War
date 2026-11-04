@@ -37,3 +37,11 @@ func test_crystals_word():
 	assert_eq(CV.crystals_word(5), "kryształów")
 	assert_eq(CV.crystals_word(12), "kryształów")
 	assert_eq(CV.crystals_word(22), "kryształy")
+
+func test_attack_block_message():
+	var c := ColonyState.new_default(1_800_000_000)
+	assert_string_contains(CV.few_dots_text(c), "Generator")
+	c.cells["0,1"] = {"type": "generator", "level": 1, "build_end": 0, "target_level": 1}
+	c.dots = 4
+	assert_string_contains(CV.few_dots_text(c), "4/10")
+	assert_false(CV.few_dots_text(c).contains("zbuduj"))

@@ -3,7 +3,7 @@ import * as B from "./buildings.ts";
 import * as Hex from "./hex.ts";
 import { idiv } from "../sim/fx.ts";
 import { SimRng } from "../sim/rng.ts";
-import { ColonyState } from "./colony.ts";
+import { ColonyState, GRID_RADIUS, hexDistance } from "./colony.ts";
 
 const WEIGHTED = ["mine", "mine", "mine", "storage", "generator", "laser", "laser", "pulse", "pulse", "wall", "wall", "trap"];
 
@@ -29,7 +29,9 @@ function candidates(c: ColonyState): [number, number][] {
   const seen = new Map<string, [number, number]>();
   for (const k of Object.keys(c.cells)) {
     const [q, r] = Hex.parse(k);
-    for (const nb of Hex.neighbors(q, r)) if (!(Hex.key(...nb) in c.cells)) seen.set(Hex.key(...nb), nb);
+    for (const nb of Hex.neighbors(q, r)) {
+      if (!(Hex.key(...nb) in c.cells) && hexDistance(...nb) <= GRID_RADIUS) seen.set(Hex.key(...nb), nb);
+    }
   }
   return [...seen.values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 }

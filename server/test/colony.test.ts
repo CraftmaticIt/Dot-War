@@ -58,3 +58,28 @@ test("fromDict rejects colony without core and future versions", () => {
   assert.equal(ColonyState.fromDict(d), null);
   assert.equal(ColonyState.fromDict("x"), null);
 });
+
+test("fromDict hardening mirrors GDScript", () => {
+  const base = () => fresh().toDict();
+  const d1 = base();
+  d1.cells["abc"] = { type: "core", level: 5, build_end: 0, target_level: 5 };
+  d1.cells["01,0"] = { type: "wall", level: 1, build_end: 0, target_level: 1 };
+  d1.cells["5,0"] = { type: "wall", level: 1, build_end: 0, target_level: 1 };
+  const c1 = ColonyState.fromDict(d1)!;
+  assert.equal(c1.cells["0,0"].level, 1);
+  assert.equal(Object.keys(c1.cells).length, 2);
+  const d2 = base();
+  d2.cells["0,1"] = { type: "mine", level: [1], build_end: 0, target_level: 1 };
+  d2.cells["-1,0"] = { type: 5, level: 1, build_end: 0, target_level: 1 };
+  d2.energy = "lots"; d2.energy_rem = -100000; d2.dots_rem = 99999;
+  d2.cells["1,0"].target_level = 0;
+  const c2 = ColonyState.fromDict(d2)!;
+  assert.equal(Object.keys(c2.cells).length, 2);
+  assert.equal(c2.energy, 0);
+  assert.equal(c2.energyRem, 0);
+  assert.equal(c2.dotsRem, 3599);
+  assert.equal(c2.cells["1,0"].target_level, 1);
+  const d3 = base();
+  d3.cells["0,1"] = { type: "core", level: 1, build_end: 0, target_level: 1 };
+  assert.equal(ColonyState.fromDict(d3), null, "two cores");
+});

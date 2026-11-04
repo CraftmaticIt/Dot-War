@@ -40,7 +40,8 @@ func test_place_errors():
 	_expect_place_error(c, "castle", 0, 1, "bad_type")
 	_expect_place_error(c, "core", 0, 1, "core_unique")
 	_expect_place_error(c, "mine", 1, 0, "occupied")
-	_expect_place_error(c, "mine", 3, 3, "not_adjacent")
+	_expect_place_error(c, "mine", 3, 0, "not_adjacent")
+	_expect_place_error(c, "mine", 5, 0, "out_of_grid")
 	c.energy = 10
 	_expect_place_error(c, "mine", 0, 1, "no_energy")
 

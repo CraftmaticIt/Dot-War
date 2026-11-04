@@ -42,7 +42,7 @@ export async function handleSync(req: Request, deps: Deps): Promise<Response> {
 export async function handleFind(req: Request, deps: Deps): Promise<Response> {
   const p = await prologue(req, deps);
   if (p instanceof Response) return p;
-  return reply(await findOpponent(deps.repo, p.uid, deps.now(), deps.rand, deps.newId));
+  return reply(await findOpponent(deps.repo, p.uid, deps.now(), deps.rand, deps.newId, p.body?.practice === true));
 }
 
 export async function handleFinish(req: Request, deps: Deps): Promise<Response> {

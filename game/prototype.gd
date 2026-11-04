@@ -111,7 +111,7 @@ func _on_send(from: int, to: int) -> void:
 	world.queue({"tick": world.tick, "type": "send", "owner": 1, "from": from, "to": to, "percent": percent})
 
 func _process(delta: float) -> void:
-	_acc += delta
+	_acc = minf(_acc + delta, 0.25)
 	var dt := 1.0 / SimWorld.TICK_HZ
 	while _acc >= dt:
 		_acc -= dt

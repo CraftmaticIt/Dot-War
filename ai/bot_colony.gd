@@ -24,7 +24,7 @@ static func _candidates(c: ColonyState) -> Array[Vector2i]:
 	for k in c.cells:
 		var h := Hex.parse(k)
 		for nb in Hex.neighbors(h.x, h.y):
-			if not c.cells.has(Hex.key(nb.x, nb.y)):
+			if not c.cells.has(Hex.key(nb.x, nb.y)) and Hex.distance(nb, Vector2i.ZERO) <= ColonyState.GRID_RADIUS:
 				seen[nb] = true
 	var out: Array[Vector2i] = []
 	for h in seen:

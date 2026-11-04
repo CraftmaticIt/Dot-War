@@ -9,13 +9,18 @@ export function runBattle(defender: ColonyState, lootPool: number, dots: number,
   commands: unknown, surrenderTick = -1): { result: Result; hash: number; ticks: number } {
   const cmds = Array.isArray(commands) ? commands.slice(0, MAX_COMMANDS) : [];
   const m = new BattleMatch(buildAttack(defender.toSimGraph(DEFENDER), dots, seed), defender.coreNodeId(), lootPool);
+  // Bucket commands by tick once (list order kept) instead of scanning all of them every tick.
+  const byTick = new Map<number, unknown[]>();
+  for (const c of cmds) {
+    if (c && typeof c === "object" && typeof (c as any).tick === "number" && Number.isFinite((c as any).tick)) {
+      const t = Math.trunc((c as any).tick);
+      if (!byTick.has(t)) byTick.set(t, []);
+      byTick.get(t)!.push(c);
+    }
+  }
   while (!m.over) {
     if (surrenderTick >= 0 && m.world.tick >= surrenderTick) { m.surrender(); break; }
-    for (const c of cmds) {
-      if (c && typeof c === "object" && typeof (c as any).tick === "number" && Math.trunc((c as any).tick) === m.world.tick) {
-        m.sendRaw(c);
-      }
-    }
+    for (const c of byTick.get(m.world.tick) ?? []) m.sendRaw(c);
     m.step();
   }
   return { result: m.result(), hash: m.world.stateHash(), ticks: m.world.tick };

@@ -13,10 +13,10 @@
         "target_level": 4
       },
       "-1,-2": {
-        "type": "pulse",
-        "level": 3,
+        "type": "wall",
+        "level": 4,
         "build_end": 0,
-        "target_level": 3
+        "target_level": 4
       },
       "-1,0": {
         "type": "pulse",
@@ -26,12 +26,6 @@
       },
       "-1,1": {
         "type": "storage",
-        "level": 4,
-        "build_end": 0,
-        "target_level": 4
-      },
-      "-2,-1": {
-        "type": "wall",
         "level": 4,
         "build_end": 0,
         "target_level": 4
@@ -90,7 +84,7 @@
         "build_end": 0,
         "target_level": 3
       },
-      "1,-2": {
+      "1,1": {
         "type": "mine",
         "level": 4,
         "build_end": 0,
@@ -101,6 +95,12 @@
         "level": 4,
         "build_end": 0,
         "target_level": 4
+      },
+      "2,0": {
+        "type": "pulse",
+        "level": 3,
+        "build_end": 0,
+        "target_level": 3
       }
     },
     "energy": 0,
@@ -122,7 +122,7 @@
     {
       "tick": 0,
       "from": 1001,
-      "to": 9,
+      "to": 3,
       "percent": 50
     },
     {
@@ -265,7 +265,7 @@
       "loot": 0,
       "trophies": -8
     },
-    "hash": 3471079265,
+    "hash": 3273200150,
     "ticks": 3600
   }
 }
