@@ -184,6 +184,11 @@ export class SupaRepo implements Repo {
     check(e2);
     return { score: data.score, rank: 1 + (count ?? 0) };
   }
+  async unsettledWeeks(before: number) {
+    const { data, error } = await this.db.rpc("pve_unsettled_weeks", { p_before: before });
+    check(error);
+    return ((data ?? []) as any[]).map((r) => Number(typeof r === "object" ? Object.values(r)[0] : r));
+  }
   async settlePveWeek(week: number, topPct: number, crystals: number, boosters: Record<string, number>) {
     const { data, error } = await this.db.rpc("settle_pve_week", { p_week: week, p_top_pct: topPct, p_crystals: crystals, p_boosters: boosters });
     check(error);

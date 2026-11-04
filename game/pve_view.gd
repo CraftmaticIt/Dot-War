@@ -82,7 +82,8 @@ static func end_text(result: Dictionary, is_arena: bool, reward: Dictionary) -> 
 	if reward.get("offline", false):
 		out.append("Nagroda wymaga połączenia")
 	elif reward.has("error"):
-		out.append("Serwer: %s" % String(reward.error))
+		out.append({"locked": "Najpierw zalicz online poprzedni poziom", "bad_week": "Tydzień areny się zmienił – zagraj nową arenę"}
+			.get(String(reward.error), "Serwer: %s" % String(reward.error)))
 	return out
 
 # --- scene ---

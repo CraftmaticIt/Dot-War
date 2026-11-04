@@ -53,3 +53,12 @@ test("build world and player nodes", () => {
   assert.equal(buildWorld(l1(), [], 1).graph.node(2).owner, 0);
   assert.deepEqual(playerNodes(l1(), []), [1]);
 });
+
+test("duplicate slot rejected even when counts allow it; budget boundary", () => {
+  assert.equal(validate(level(2)!, [{ slot: 3, type: "pulse" }, { slot: 3, type: "laser" }], false), "bad_placement");
+  const a = PVE.arena;
+  const lvl = { nodes: a.map.nodes, links: a.map.links, allowed: {}, level: 1, waves: [] } as any;
+  const base = [{ slot: 2, type: "laser" }, { slot: 3, type: "laser" }, { slot: 4, type: "laser" }, { slot: 5, type: "wall" }];
+  assert.equal(validate(lvl, base, true), "", "11 points");
+  assert.equal(validate(lvl, [...base, { slot: 6, type: "trap" }], true), "bad_placement", "13 > 12");
+});

@@ -36,7 +36,7 @@ func test_validate_arena_budget():
 	var ok := [{"slot": 2, "type": "laser"}, {"slot": 3, "type": "laser"}, {"slot": 4, "type": "pulse"}, {"slot": 5, "type": "laser"}]
 	assert_eq(PveLevel.validate(lvl, ok, true), "", "3+3+3+3 = 12")
 	ok.append({"slot": 6, "type": "trap"})
-	assert_eq(PveLevel.validate(lvl, ok, true), "bad_placement", "13 > budget 12")
+	assert_eq(PveLevel.validate(lvl, ok, true), "bad_placement", "14 > budget 12")
 
 func test_build_world_and_player_nodes():
 	var p := [{"slot": 2, "type": "laser"}]

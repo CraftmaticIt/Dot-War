@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MemoryRepo } from "../core/repo.ts";
-import { finishPve, pveRanking } from "../core/pve.ts";
+import { finishPve, pveRanking, GRACE_SECS } from "../core/pve.ts";
 import { profile } from "../core/profile.ts";
 import { PVE, weekIndex, WEEK_SECS } from "../game/pve.ts";
 
@@ -37,7 +37,7 @@ test("bad input: placement, level, locked level, week", async () => {
   assert.equal((await finishPve(repo, "u", { level: 999, placement: [] }, NOW)).error, "bad_level");
   assert.equal((await finishPve(repo, "u", { level: "1", placement: [] }, NOW)).error, "bad_level");
   assert.equal((await finishPve(repo, "u", { level: 2, placement: [] }, NOW)).error, "locked");
-  assert.equal((await finishPve(repo, "u", { week: weekIndex(NOW) - 1, placement: [] }, NOW)).error, "bad_week");
+  assert.equal((await finishPve(repo, "u", { week: weekIndex(NOW) - 2, placement: [] }, NOW)).error, "bad_week");
   assert.equal((await finishPve(repo, "u", { week: weekIndex(NOW), placement: "x" }, NOW)).error, "bad_placement");
   assert.equal(await crystals(repo, "u"), 50);
   assert.deepEqual(await repo.pveStars("u"), {});
@@ -72,17 +72,40 @@ test("weekly settlement: top 10% rewarded once; zero scores never", async () => 
   }
   await repo.ensurePlayer("z", NOW);
   await repo.pveWeekRecord("z", prev, 0);
-  await pveRanking(repo, "p00", NOW);
+  const later = NOW + GRACE_SECS;                     // past the grace period of the previous week
+  await pveRanking(repo, "p00", later);
   const rw = PVE.weekly.reward;
   assert.equal(await crystals(repo, "p19"), 50 + rw.crystals);
   assert.equal(await crystals(repo, "p18"), 50 + rw.crystals);
   assert.equal(await crystals(repo, "p17"), 50);
   assert.equal((await repo.getPlayer("p19"))!.boosters.split, 1 + rw.boosters.split);
-  await pveRanking(repo, "p00", NOW);
+  await pveRanking(repo, "p00", later);
   assert.equal(await crystals(repo, "p19"), 50 + rw.crystals, "settled once");
   const r2 = new MemoryRepo();
   await r2.ensurePlayer("z", NOW);
   await r2.pveWeekRecord("z", prev, 0);
-  await pveRanking(r2, "z", NOW);
+  await pveRanking(r2, "z", NOW + GRACE_SECS);
   assert.equal(await crystals(r2, "z"), 50);
+});
+
+test("arena: last week's run is accepted within the grace period, not after", async () => {
+  const repo = new MemoryRepo();
+  await repo.ensurePlayer("u", NOW);
+  const start = PVE.weekly.epoch + 4 * WEEK_SECS;            // week 4 begins
+  const p = [{ slot: 2, type: "laser" }];
+  assert.ok(!(await finishPve(repo, "u", { week: 3, placement: p }, start + 600)).error, "10 min after rollover");
+  assert.equal((await finishPve(repo, "u", { week: 3, placement: p }, start + GRACE_SECS + 1)).error, "bad_week");
+});
+
+test("settlement waits for the grace period and catches up on skipped weeks", async () => {
+  const repo = new MemoryRepo();
+  for (const id of ["a", "b"]) await repo.ensurePlayer(id, NOW);
+  await repo.pveWeekRecord("a", 1, 5);                       // nobody opened the ranking in week 2
+  await repo.pveWeekRecord("b", 2, 7);
+  const start3 = PVE.weekly.epoch + 3 * WEEK_SECS;
+  await pveRanking(repo, "a", start3 + 60);                  // week 2 still in grace
+  assert.equal((await repo.getPlayer("a"))!.crystals, 50 + PVE.weekly.reward.crystals, "week 1 settled late");
+  assert.equal((await repo.getPlayer("b"))!.crystals, 50, "week 2 not yet");
+  await pveRanking(repo, "a", start3 + GRACE_SECS + 1);
+  assert.equal((await repo.getPlayer("b"))!.crystals, 50 + PVE.weekly.reward.crystals);
 });

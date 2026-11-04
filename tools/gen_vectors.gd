@@ -116,6 +116,18 @@ func _init() -> void:
 		{"tick": 2, "type": "spawn", "owner": 0, "node": 9, "to": 1, "count": 5, "kind": 0},
 		_spawn(3, 9, 9, 5, 0), _spawn(3, 9, 1, 25, 1)]
 	_write("v009_spawn", g, 9, cmds, 120)
+	# v010: ends mid-flight with every kind alive (pins ,k<kind>), fast under rage, armored under
+	# shield and laser, a splash death next to a low-garrison node (clamped at 0).
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 90, 0)
+	g.add_node(2, 7000, 1500, 1, 2, 0, "laser", 0, 1)
+	g.add_node(3, 7000, -1500, 1, 30, 0, "pulse", 0, 3)
+	g.add_node(9, 20000, 0, 2, 0, 0)
+	g.link(1, 9); g.link(1, 2); g.link(1, 3)
+	cmds = [_spawn(0, 9, 1, 6, 1), {"tick": 0, "type": "boost", "owner": 2, "booster": "rage", "node": 1},
+		_spawn(2, 9, 1, 9, 2), {"tick": 2, "type": "boost", "owner": 2, "booster": "shield", "node": 1},
+		_spawn(4, 9, 1, 1, 3), _spawn(6, 9, 1, 4, 0), _spawn(30, 9, 1, 8, 3), _spawn(40, 9, 1, 7, 2)]
+	_write("v010_kinds_midflight", g, 10, cmds, 75)
 	quit()
 
 func _spawn(t: int, node: int, to: int, count: int, kind: int) -> Dictionary:

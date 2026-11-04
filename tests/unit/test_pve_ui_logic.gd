@@ -38,3 +38,9 @@ func test_end_text():
 	var ar := PV.end_text({"stars": 0, "score": 7}, true, {"score": 7, "best": 9})
 	assert_true("Przetrwane fale: 7" in ar)
 	assert_true("Rekord tygodnia: 9" in ar)
+
+func test_end_text_server_refusals_are_explained():
+	var lk := PV.end_text({"stars": 3, "score": 0}, false, {"error": "locked"})
+	assert_true("Najpierw zalicz online poprzedni poziom" in lk)
+	var wk := PV.end_text({"stars": 0, "score": 4}, true, {"error": "bad_week"})
+	assert_true("Tydzień areny się zmienił – zagraj nową arenę" in wk)

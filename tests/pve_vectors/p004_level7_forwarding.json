@@ -1,0 +1,15 @@
+{
+  "level": 7,
+  "placement": [],
+  "seed": 1,
+  "expected": {
+    "result": {
+      "stars": 0,
+      "lost": 1,
+      "score": 2,
+      "waves_started": 3,
+      "ticks": 293
+    },
+    "hash": 3389785966
+  }
+}

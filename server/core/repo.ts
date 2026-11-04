@@ -68,6 +68,8 @@ export interface Repo {
   /** Once per week: players with score > 0 within the top `topPct`% (at least 1; ties at the
    *  threshold included) get crystals + boosters. false when the week was already settled. */
   settlePveWeek(week: number, topPct: number, crystals: number, boosters: Record<string, number>): Promise<boolean>;
+  /** Weeks below `before` that have scores and are not settled yet, ascending. */
+  unsettledWeeks(before: number): Promise<number[]>;
 }
 
 const clone = <T>(x: T): T => structuredClone(x);
@@ -264,6 +266,9 @@ export class MemoryRepo implements Repo {
       this.mirror(r.player);
     }
     return true;
+  }
+  async unsettledWeeks(before: number) {
+    return [...this.weekly.keys()].filter((w) => w < before && !this.settledWeeks.has(w)).sort((a, b) => a - b);
   }
   async defensesSince(defender: string, since: number) {
     let count = 0, loot = 0;

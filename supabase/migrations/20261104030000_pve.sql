@@ -56,14 +56,23 @@ begin
   k := greatest(1, (n * p_top_pct) / 100);
   select score into threshold from public.pve_weekly where week = p_week and score > 0
    order by score desc, player_id limit 1 offset k - 1;
-  for r in select player_id from public.pve_weekly where week = p_week and score >= threshold and score > 0 loop
+  for r in select player_id from public.pve_weekly where week = p_week and score >= threshold and score > 0
+           order by player_id loop
     perform public.grant_items(r.player_id, p_crystals, p_boosters);
   end loop;
   return true;
 end $$;
 
+create or replace function public.pve_unsettled_weeks(p_before int)
+returns setof int language sql stable as $$
+  select distinct w.week from public.pve_weekly w
+   where w.week < p_before and not exists (select 1 from public.pve_weeks_settled s where s.week = w.week)
+   order by 1;
+$$;
+
+revoke all on function public.pve_unsettled_weeks(int) from public, anon, authenticated;
 revoke all on function public.pve_record(uuid, int, int, int) from public, anon, authenticated;
 revoke all on function public.pve_week_record(uuid, int, int) from public, anon, authenticated;
 revoke all on function public.settle_pve_week(int, int, int, jsonb) from public, anon, authenticated;
 grant execute on function public.pve_record(uuid, int, int, int), public.pve_week_record(uuid, int, int),
-  public.settle_pve_week(int, int, int, jsonb) to service_role;
+  public.settle_pve_week(int, int, int, jsonb), public.pve_unsettled_weeks(int) to service_role;

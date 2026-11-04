@@ -15,4 +15,6 @@ func _init() -> void:
 	_write("p002_level1_empty", {"level": 1, "placement": [], "seed": 1})
 	_write("p003_arena_week5", {"week": 5, "seed": 5, "placement": [{"slot": 2, "type": "laser"},
 		{"slot": 5, "type": "pulse"}, {"slot": 8, "type": "wall"}, {"slot": 9, "type": "trap"}, {"slot": 3, "type": "wall"}]})
+	# p004: empty slots on the path are captured and their garrison forwarded to the core.
+	_write("p004_level7_forwarding", {"level": 7, "placement": [], "seed": 1})
 	quit()
