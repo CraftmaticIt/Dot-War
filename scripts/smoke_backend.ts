@@ -42,6 +42,13 @@ const nb = await call("/functions/v1/find_opponent", { loadout: ["emp", "emp"] }
 expect(nb.status === 409 && nb.data.error === "no_boosters", "loadout beyond inventory refused before matchmaking", nb);
 const f = await call("/functions/v1/find_opponent", {}, tok);
 expect(f.status === 409 && f.data.error === "few_dots", "find_opponent refuses with 0 dots", f);
+const pv = await call("/functions/v1/finish_pve", { level: 1, placement: [{ slot: 2, type: "laser" }] }, tok);
+expect(pv.status === 200 && pv.data.stars === 3 && pv.data.gained === 3 && pv.data.profile?.pve?.["1"] === 3,
+  "finish_pve: level 1 solution gives 3 stars once", pv);
+const pv2 = await call("/functions/v1/finish_pve", { level: 1, placement: [{ slot: 2, type: "laser" }] }, tok);
+expect(pv2.status === 200 && pv2.data.gained === 0, "finish_pve: repeat grants nothing", pv2);
+const rk = await call("/functions/v1/pve_ranking", {}, tok);
+expect(rk.status === 200 && Number.isInteger(rk.data.week) && Array.isArray(rk.data.top), "pve_ranking answers", rk);
 const x = await call("/functions/v1/finish_attack", { attack_id: "00000000-0000-0000-0000-000000000000", commands: [] }, tok);
 expect(x.status === 404, "finish_attack unknown id -> 404", x);
 const u = await call("/functions/v1/sync_colony", { colony: {} });
