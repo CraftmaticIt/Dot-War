@@ -30,7 +30,8 @@ jobs:
       - name: Backend config for the client (public URL + anon key)
         if: env.SUPABASE_PROJECT_REF != ''
         run: |
-          KEY="$(supabase projects api-keys --project-ref "$SUPABASE_PROJECT_REF" -o json | jq -r '[.[] | select(.name == "anon")][0].api_key')"
+          KEY="$(supabase projects api-keys --remote="$SUPABASE_PROJECT_REF" --reveal -o json | jq -r 'first(.. | objects | select(.name? == "anon") | .api_key)')"
+          test -n "$KEY" && test "$KEY" != "null"
           jq -n --arg url "https://$SUPABASE_PROJECT_REF.supabase.co" --arg key "$KEY" '{url: $url, anon_key: $key}' > net/config.json
           echo "net/config.json written for $SUPABASE_PROJECT_REF"
       - run: ./scripts/export_android.sh

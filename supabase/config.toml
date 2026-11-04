@@ -15,7 +15,7 @@ jwt_expiry = 3600
 enable_refresh_token_rotation = true
 
 [auth.email]
-enable_signup = false
+enabled = false
 
 [functions.sync_colony]
 verify_jwt = true

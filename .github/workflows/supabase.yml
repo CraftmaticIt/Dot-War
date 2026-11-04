@@ -35,21 +35,22 @@ jobs:
           version: latest
       - name: Link project
         if: steps.cfg.outputs.ok == 'true'
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
       - name: Migrate database
         if: steps.cfg.outputs.ok == 'true'
-        run: supabase db push -p "$SUPABASE_DB_PASSWORD"
+        run: supabase db push --remote -p "$SUPABASE_DB_PASSWORD" --yes
       - name: Push auth config
         if: steps.cfg.outputs.ok == 'true'
-        run: yes | supabase config push --project-ref "$SUPABASE_PROJECT_REF"
+        run: supabase config push --yes
       - name: Deploy functions
         if: steps.cfg.outputs.ok == 'true'
         run: |
           ./scripts/prepare_functions.sh
-          supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --use-api
+          supabase functions deploy --use-api --yes
       - name: Smoke test
         if: steps.cfg.outputs.ok == 'true'
         run: |
           export SUPABASE_URL="https://$SUPABASE_PROJECT_REF.supabase.co"
-          export SUPABASE_ANON_KEY="$(supabase projects api-keys --project-ref "$SUPABASE_PROJECT_REF" -o json | jq -r '[.[] | select(.name == "anon")][0].api_key')"
+          export SUPABASE_ANON_KEY="$(supabase projects api-keys --reveal -o json | jq -r 'first(.. | objects | select(.name? == "anon") | .api_key)')"
+          test -n "$SUPABASE_ANON_KEY" && test "$SUPABASE_ANON_KEY" != "null" || { echo "anon key not found"; supabase projects api-keys -o json | jq 'map(.name)'; exit 1; }
           node --experimental-strip-types --no-warnings scripts/smoke_backend.ts
