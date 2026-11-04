@@ -1,0 +1,29 @@
+{
+  "boosters": {
+    "rage": {"name": "Szał", "price": 15, "info": "+50% prędkości grup lecących do węzła (8 s)"},
+    "shield": {"name": "Tarcza", "price": 15, "info": "−60% obrażeń dla grup lecących do węzła (6 s)"},
+    "emp": {"name": "EMP", "price": 20, "info": "wyłącza wrogie wieże w promieniu węzła (4 s)"},
+    "split": {"name": "Rozszczepienie", "price": 25, "info": "pierwsza grupa w węźle ×2 kropek"}
+  },
+  "start_boosters": {"rage": 1, "shield": 1, "emp": 1, "split": 1},
+  "max_loadout": 3,
+  "leagues": [
+    {"name": "Brąz", "min": 0, "reward": 10},
+    {"name": "Srebro", "min": 400, "reward": 25},
+    {"name": "Złoto", "min": 800, "reward": 50},
+    {"name": "Platyna", "min": 1200, "reward": 100},
+    {"name": "Diament", "min": 1600, "reward": 200}
+  ],
+  "season": {"epoch": 1793577600, "days": 14, "reset_above": 1000},
+  "quests_per_day": 3,
+  "quests": [
+    {"id": "win1", "text": "Wygraj atak", "event": "attack_win", "target": 1, "reward": 5},
+    {"id": "win2", "text": "Wygraj 2 ataki", "event": "attack_win", "target": 2, "reward": 10},
+    {"id": "stars5", "text": "Zdobądź 5 gwiazdek", "event": "stars", "target": 5, "reward": 10},
+    {"id": "destroy200", "text": "Zniszcz łącznie 200% baz", "event": "destroyed_pct", "target": 200, "reward": 8},
+    {"id": "boost2", "text": "Użyj 2 boosterów", "event": "boost_used", "target": 2, "reward": 6},
+    {"id": "upgrade3", "text": "Ulepsz 3 budynki", "event": "upgrade", "target": 3, "reward": 8},
+    {"id": "defend1", "text": "Odeprzyj atak (najwyżej 1★)", "event": "defense", "target": 1, "reward": 6}
+  ],
+  "chest": {"boosters_min": 1, "boosters_max": 2, "crystals_min": 5, "crystals_max": 20}
+}
