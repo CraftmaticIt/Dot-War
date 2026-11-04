@@ -12,6 +12,9 @@ const LETTERS := {"core": "C", "mine": "M", "storage": "S", "generator": "G",
 
 var colony: ColonyState        # may be injected before _ready (tests)
 var save_enabled := true
+var backend: Backend = null
+var _sync_in := -1.0   # seconds until a debounced server sync (-1 = none)
+const SYNC_DEBOUNCE := 3.0
 var origin := Vector2(640, 380)
 var selected := Vector2i(999, 999)
 var _hud: Label
@@ -103,7 +106,8 @@ func _ready() -> void:
 		colony = res.colony
 		if res.reset:
 			_show_toast("Zapis był uszkodzony – kopia zachowana, start od nowa")
-		if colony.resolve_abandoned_attack():
+		backend = Backend.shared(get_tree().root)
+		if not backend.is_configured() and colony.resolve_abandoned_attack():
 			_show_toast("Przerwana bitwa = porażka (%d trofeów)" % ColonyState.ABANDON_TROPHIES)
 		var got := colony.collect(_now())
 		if got.energy > 0 or got.dots > 0:
@@ -111,6 +115,22 @@ func _ready() -> void:
 		_save()
 	_build_ui()
 	_refresh()
+	if backend != null and backend.is_configured():
+		_sync_server()
+
+## Uploads the colony; adopts the server's copy (server owns trophies/crystals and
+## rejects impossible jumps).
+func _sync_server() -> void:
+	if backend == null or not backend.is_configured():
+		return
+	var before := colony.to_dict()
+	var got := await backend.sync(colony)
+	if backend.online and got.to_dict() != before:
+		colony = got
+		_save()
+		_refresh()
+	elif not backend.online:
+		_update_dynamic(_now())
 
 func _build_ui() -> void:
 	var layer := CanvasLayer.new()
@@ -151,6 +171,22 @@ func _show_toast(msg: String) -> void:
 	_toast_left = 4.0
 
 func _on_attack() -> void:
+	if backend != null and backend.is_configured():
+		var res := await backend.find_opponent()
+		if not res.has("offline"):
+			if res.has("error"):
+				_show_toast("Za mało kropek (min %d)" % ColonyState.MIN_ATTACK_DOTS if res.error == "few_dots"
+					else "Serwer: %s" % res.error)
+				return
+			colony.dots = 0
+			colony.dots_rem = 0
+			colony.attacks += 1
+			colony.attack_open = 1
+			_save()
+			BattleView.pending = {"colony": colony, "dots": int(res.dots), "seed": int(res.seed),
+				"snapshot": res.snapshot, "loot_pool": int(res.loot_pool), "attack_id": String(res.attack_id)}
+			get_tree().change_scene_to_file("res://game/battle_view.tscn")
+			return
 	var a := colony.begin_attack(_now())
 	if a.has("error"):
 		_show_toast("Za mało kropek (min %d) – zbuduj Generator" % ColonyState.MIN_ATTACK_DOTS)
@@ -174,12 +210,18 @@ func _notification(what: int) -> void:
 		_refresh()
 	elif what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
 		_save()
+		_sync_server()
 
 func _process(delta: float) -> void:
 	_tick += delta
 	if _tick >= 1.0:
 		_tick = 0.0
 		on_second()
+	if _sync_in > 0.0:
+		_sync_in -= delta
+		if _sync_in <= 0.0:
+			_sync_in = -1.0
+			_sync_server()
 	if _toast_left > 0.0:
 		_toast_left -= delta
 		if _toast_left <= 0.0:
@@ -239,7 +281,8 @@ func _refresh() -> void:
 	_update_dynamic(now)
 
 func _update_dynamic(now: int) -> void:
-	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Trofea %d" % [
+	var net := "" if backend == null or not backend.is_configured() else ("● online    " if backend.online else "○ offline    ")
+	_hud.text = net + "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Trofea %d" % [
 		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
 		colony.busy_builders(now), ColonyState.BUILDERS, colony.trophies]
 	var k := Hex.key(selected.x, selected.y)
@@ -329,6 +372,7 @@ func _act(err: String) -> void:
 	if err != "":
 		_show_toast(_err_text(err))
 	_save()
+	_sync_in = SYNC_DEBOUNCE
 	_refresh()
 
 func _draw() -> void:

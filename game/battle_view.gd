@@ -18,6 +18,11 @@ var map: Node2D
 var percent := 50
 var save_enabled := true
 var _applied := false
+## Online attack: server attack id, recorded commands and surrender tick for verification.
+var attack_id := ""
+var commands: Array = []
+var surrender_tick := -1
+var backend: Backend = null
 var _acc := 0.0
 var _hud: Label
 var _end: VBoxContainer
@@ -64,21 +69,42 @@ func _ready() -> void:
 		dots = pending.dots
 		seed = pending.seed
 		trophies = colony.trophies
+		if pending.has("snapshot"):
+			attack_id = String(pending.get("attack_id", ""))
+			var snap := ColonyState.from_dict(pending.snapshot)
+			if snap != null:
+				_start(snap, int(pending.loot_pool), dots, seed)
+				pending = {}
+				return
 		pending = {}
 	else:
 		get_tree().change_scene_to_file.call_deferred("res://game/colony_view.tscn")
 		return
 	var bot: Dictionary = BotColony.generate(trophies, seed)
-	var bc: ColonyState = bot.colony
+	_start(bot.colony, bot.loot_pool, dots, seed)
+
+func _start(defender: ColonyState, loot_pool: int, dots: int, seed: int) -> void:
 	var core_id := 1
-	var ids := bc.snapshot_ids()
+	var ids := defender.snapshot_ids()
 	for id in ids:
 		if ids[id] == Vector2i.ZERO:
 			core_id = id
-	var world := AttackSetup.build(bc.to_sim_graph(AttackSetup.DEFENDER), dots, seed)
-	battle = BattleMatch.new(world, core_id, bot.loot_pool)
+	var world := AttackSetup.build(defender.to_sim_graph(AttackSetup.DEFENDER), dots, seed)
+	battle = BattleMatch.new(world, core_id, loot_pool)
 	_build_scene()
 	_build_ui()
+
+## Every player command goes through here so the server can replay the battle.
+func send_cmd(from: int, to: int, pct: int) -> void:
+	if battle.over:
+		return
+	commands.append({"tick": battle.world.tick, "from": from, "to": to, "percent": pct})
+	battle.send(from, to, pct)
+
+func surrender_now() -> void:
+	if not battle.over:
+		surrender_tick = battle.world.tick
+		battle.surrender()
 
 func _bounds() -> Rect2i:
 	var g := battle.world.graph
@@ -115,7 +141,7 @@ func _build_scene() -> void:
 	var input := InputSend.new()
 	input.world = battle.world
 	input.views = views
-	input.send_requested.connect(func(from: int, to: int): battle.send(from, to, percent))
+	input.send_requested.connect(func(from: int, to: int): send_cmd(from, to, percent))
 	map.add_child(input)
 
 ## The attacker never sees traps: strip trap info before drawing.
@@ -148,7 +174,7 @@ func _build_ui() -> void:
 	give_up.text = "Poddaj się"
 	give_up.custom_minimum_size = Vector2(140, 44)
 	give_up.position = Vector2(1124, 660)
-	give_up.pressed.connect(func(): battle.surrender())
+	give_up.pressed.connect(surrender_now)
 	layer.add_child(give_up)
 	_end = VBoxContainer.new()
 	_end.position = Vector2(440, 220)
@@ -167,7 +193,7 @@ func _process(delta: float) -> void:
 			if _shot != "" and battle.world.tick % BOT_EVERY_TICKS == 0:
 				var cmd := SimpleBot.decide(battle.world, AttackSetup.ATTACKER)
 				if not cmd.is_empty():
-					battle.send(cmd.from, cmd.to, cmd.percent)
+					send_cmd(cmd.from, cmd.to, cmd.percent)
 			battle.step()
 		renderer.sync(battle.world, _acc / dt)
 		for v in views:
@@ -192,27 +218,37 @@ func _notification(what: int) -> void:
 		return
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST or what == NOTIFICATION_WM_CLOSE_REQUEST \
 			or what == NOTIFICATION_APPLICATION_PAUSED:
-		if not battle.over:
-			battle.surrender()
+		surrender_now()
 		if not _applied:
 			_show_end()
 
-func _apply_once(r: Dictionary) -> void:
+## Applies the result once. Online: the server replays the commands and its result wins.
+func _apply_once(r: Dictionary) -> Dictionary:
 	if _applied or colony == null:
 		_applied = true
-		return
+		return r
 	_applied = true
+	if attack_id != "":
+		if backend == null:
+			backend = Backend.shared(get_tree().root)
+		var sr := await backend.finish_attack(attack_id, commands, surrender_tick)
+		if typeof(sr.get("result")) == TYPE_DICTIONARY:
+			r = sr.result
 	colony.apply_result(r)
 	if save_enabled and SaveStore.save(colony) != OK:
 		push_warning("BattleView: save failed")
+	return r
 
 func _show_end() -> void:
 	if _end.visible:
 		return
 	renderer.sync(battle.world, 1.0)
-	var r := battle.result()
-	_apply_once(r)
 	_end.visible = true
+	var wait := Label.new()
+	wait.text = "Weryfikacja wyniku…"
+	_end.add_child(wait)
+	var r: Dictionary = await _apply_once(battle.result())
+	wait.queue_free()
 	for t in ["Zwycięstwo!" if r.stars > 0 else "Porażka", stars_text(r.stars),
 			"Zniszczono %d%%" % r.destroyed_pct, "Łup: +%d energii" % r.loot, "Trofea: %+d" % r.trophies]:
 		var l := Label.new()

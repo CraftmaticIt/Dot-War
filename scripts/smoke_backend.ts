@@ -33,4 +33,21 @@ const x = await call("/functions/v1/finish_attack", { attack_id: "00000000-0000-
 expect(x.status === 404, "finish_attack unknown id -> 404", x);
 const u = await call("/functions/v1/sync_colony", { colony: {} });
 expect(u.status === 401, "anon key alone is not a user", u);
+// Full attack: a second anonymous player whose first upload carries dots (first sync is adopted).
+const su2 = await call("/auth/v1/signup", {});
+expect(su2.status === 200, "second anonymous sign-up", su2);
+const t2 = su2.data.access_token;
+const col = ColonyState.newDefault(now);
+col.cells["0,1"] = { type: "generator", level: 1, build_end: 0, target_level: 1 };
+col.dots = 45;
+expect((await call("/functions/v1/sync_colony", { colony: col.toDict() }, t2)).status === 200, "sync with dots");
+const op = await call("/functions/v1/find_opponent", {}, t2);
+expect(op.status === 200 && !!op.data.attack_id && op.data.dots === 45, "find_opponent opens an attack", op);
+const cmds = [1001, 1002, 1003].map((e) => ({ tick: 0, from: e, to: 1, percent: 100 }));
+const fin = await call("/functions/v1/finish_attack", { attack_id: op.data.attack_id, commands: cmds, surrender_tick: -1 }, t2);
+expect(fin.status === 200 && typeof fin.data.result?.stars === "number", "finish_attack replays and scores", fin);
+const fin2 = await call("/functions/v1/finish_attack", { attack_id: op.data.attack_id, commands: [] }, t2);
+expect(JSON.stringify(fin2.data.result) === JSON.stringify(fin.data.result), "finish_attack is idempotent", fin2);
+const back = await call("/functions/v1/sync_colony", { colony: col.toDict() }, t2);
+expect(back.status === 200 && back.data.accepted === false && back.data.colony.dots === 0, "server refuses re-spending dots", back);
 console.log("SMOKE OK");

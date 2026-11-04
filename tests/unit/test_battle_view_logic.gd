@@ -89,3 +89,19 @@ func test_leaving_mid_battle_counts_as_surrender():
 	assert_true(v.battle.over)
 	assert_eq(v.colony.attack_open, 0)
 	assert_eq(v.colony.trophies, 42)
+
+func test_online_pending_uses_snapshot_and_records_commands():
+	var c := ColonyState.new_default(1_800_000_000)
+	var defender := ColonyState.new_default(1_800_000_000)
+	defender.cells["0,1"] = {"type": "wall", "level": 1, "build_end": 0, "target_level": 1}
+	BV.pending = {"colony": c, "dots": 30, "seed": 4, "snapshot": defender.to_dict(), "loot_pool": 400, "attack_id": "id-1"}
+	var v: Node2D = BV.new()
+	v.save_enabled = false
+	add_child_autofree(v)
+	assert_eq(v.attack_id, "id-1")
+	assert_eq(v.battle.world.graph.node_ids().size(), 3 + 3, "snapshot nodes + entries")
+	v.send_cmd(1001, 1, 50)
+	assert_eq(v.commands, [{"tick": 0, "from": 1001, "to": 1, "percent": 50}])
+	v.battle.step()
+	v.surrender_now()
+	assert_eq(v.surrender_tick, 1)
