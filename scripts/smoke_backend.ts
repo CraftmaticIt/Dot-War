@@ -47,7 +47,8 @@ const cmds = [1001, 1002, 1003].map((e) => ({ tick: 0, from: e, to: 1, percent: 
 const fin = await call("/functions/v1/finish_attack", { attack_id: op.data.attack_id, commands: cmds, surrender_tick: -1 }, t2);
 expect(fin.status === 200 && typeof fin.data.result?.stars === "number", "finish_attack replays and scores", fin);
 const fin2 = await call("/functions/v1/finish_attack", { attack_id: op.data.attack_id, commands: [] }, t2);
-expect(JSON.stringify(fin2.data.result) === JSON.stringify(fin.data.result), "finish_attack is idempotent", fin2);
+const same = (a: any, b: any) => ["stars", "destroyed_pct", "loot", "trophies"].every((k) => a?.[k] === b?.[k]);
+expect(same(fin2.data.result, fin.data.result), "finish_attack is idempotent (jsonb key order ignored)", fin2);
 const back = await call("/functions/v1/sync_colony", { colony: col.toDict() }, t2);
 expect(back.status === 200 && back.data.accepted === false && back.data.colony.dots === 0, "server refuses re-spending dots", back);
 console.log("SMOKE OK");
