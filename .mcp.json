@@ -2,7 +2,7 @@
   "mcpServers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=wtiggivodejyppridynr&read_only=true&features=docs%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions"
+      "url": "https://mcp.supabase.com/mcp?project_ref=scsymakfkxbwehjlgkeg&read_only=true&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cfeedback"
     },
     "context7": {
       "type": "http",
