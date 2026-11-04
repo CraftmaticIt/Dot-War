@@ -15,12 +15,13 @@ Mobile (Android/iOS) async-PvP strategy: neon dot swarms flowing over a node gra
 
 ## Phone build
 
-GitHub Actions → workflow **android** → artifact `dot-war-debug-apk`. Install the APK, tap **Benchmark** in the bottom-right corner to measure FPS.
+GitHub Actions → workflow **android** → artifact `dot-war-debug-apk`. Install the APK. Colony screen → **Trening** → **Benchmark** (bottom-right) measures FPS. **Atak** fights a bot colony (needs ≥10 dots: build a Generator).
 
 ## Layout
 
 - `sim/` deterministic simulation (ints only, 20 Hz): `SimGraph`, `SimWorld`, `SimTowers`, `SimReplay`
-- `ai/` bots
+- `ai/` bots (`SimpleBot`, `BotColony` generator)
+- `battle/` attack setup (entry nodes) and match rules (stars, loot, trophies)
 - `meta/` colony + economy (hex grid, buildings, timers, offline accrual, save, snapshot → `SimGraph`)
 - `game/` rendering (MultiMesh neon dots), colony screen (main scene), battle prototype
 - `tests/vectors/` determinism vectors — the contract for the TypeScript server verifier

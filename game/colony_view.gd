@@ -117,14 +117,20 @@ func _build_ui() -> void:
 	_hud.position = Vector2(16, 12)
 	_hud.add_theme_font_size_override("font_size", 22)
 	layer.add_child(_hud)
-	var battle := Button.new()
-	battle.text = "Bitwa"
-	battle.custom_minimum_size = Vector2(120, 48)
-	battle.position = Vector2(1144, 12)
-	battle.pressed.connect(func():
+	var attack := Button.new()
+	attack.text = "Atak"
+	attack.custom_minimum_size = Vector2(120, 48)
+	attack.position = Vector2(1144, 12)
+	attack.pressed.connect(_on_attack)
+	layer.add_child(attack)
+	var training := Button.new()
+	training.text = "Trening"
+	training.custom_minimum_size = Vector2(120, 48)
+	training.position = Vector2(1144, 668)
+	training.pressed.connect(func():
 		_save()
 		get_tree().change_scene_to_file("res://game/prototype.tscn"))
-	layer.add_child(battle)
+	layer.add_child(training)
 	_panel = VBoxContainer.new()
 	_panel.position = Vector2(16, 70)
 	_panel.custom_minimum_size = Vector2(300, 0)
@@ -141,6 +147,15 @@ func _show_toast(msg: String) -> void:
 	else:
 		call_deferred("_show_toast", msg)
 	_toast_left = 4.0
+
+func _on_attack() -> void:
+	var a := colony.begin_attack(_now())
+	if a.has("error"):
+		_show_toast("Za mało kropek (min %d) – zbuduj Generator" % ColonyState.MIN_ATTACK_DOTS)
+		return
+	_save()
+	BattleView.pending = {"colony": colony, "dots": a.dots, "seed": a.seed}
+	get_tree().change_scene_to_file("res://game/battle_view.tscn")
 
 func _save() -> void:
 	if _shot == "" and save_enabled:
@@ -222,9 +237,9 @@ func _refresh() -> void:
 	_update_dynamic(now)
 
 func _update_dynamic(now: int) -> void:
-	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d" % [
+	_hud.text = "Energia %d / %d    Kropki %d / %d    Kryształy %d    Budowniczowie %d/%d    Trofea %d" % [
 		colony.energy, colony.energy_cap(), colony.dots, colony.dots_cap(), colony.crystals,
-		colony.busy_builders(now), ColonyState.BUILDERS]
+		colony.busy_builders(now), ColonyState.BUILDERS, colony.trophies]
 	var k := Hex.key(selected.x, selected.y)
 	if _timer_label != null and colony.cells.has(k):
 		var cell: Dictionary = colony.cells[k]

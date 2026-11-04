@@ -11,7 +11,8 @@ var world: SimWorld
 var _drag_from := -1
 var _drag_pos := Vector2.ZERO
 
-func _node_at(p: Vector2) -> int:
+func _node_at(screen_pos: Vector2) -> int:
+	var p := get_global_transform().affine_inverse() * screen_pos  # works when the map is scaled
 	for v in views:
 		if v.position.distance_to(p) <= NodeView.RADIUS + 12:
 			return v.node_id
@@ -23,7 +24,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		var id: int = _node_at(e.position)
 		if id != -1 and world.graph.node(id).owner == player_owner:
 			_drag_from = id
-			_drag_pos = e.position
+			_drag_pos = get_global_transform().affine_inverse() * e.position
 	elif pressed and not e.pressed and _drag_from != -1:
 		var to: int = _node_at(e.position)
 		if to != -1 and to != _drag_from:
@@ -31,7 +32,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		_drag_from = -1
 		queue_redraw()
 	elif (e is InputEventMouseMotion or e is InputEventScreenDrag) and _drag_from != -1:
-		_drag_pos = e.position
+		_drag_pos = get_global_transform().affine_inverse() * e.position
 		queue_redraw()
 
 func _draw() -> void:
