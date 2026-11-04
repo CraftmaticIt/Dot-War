@@ -7,10 +7,12 @@ export type ProfileView = {
   boosters: Record<string, number>; crystals: number; trophies: number; league: number; league_name: string;
   season: number; season_ends: number; last_reward: any;
   quests: { id: string; text: string; progress: number; target: number; reward: number; done: boolean }[];
+  /** Campaign stars per level id. */
+  pve: Record<string, number>;
 };
 const RETRIES = 4;
 
-function view(p: Player, now: number): ProfileView {
+function view(p: Player, now: number, pve: Record<string, number>): ProfileView {
   const lg = leagueOf(p.trophies);
   return {
     boosters: { ...p.boosters }, crystals: p.crystals, trophies: p.trophies, league: lg, league_name: DEFS.leagues[lg].name,
@@ -19,6 +21,7 @@ function view(p: Player, now: number): ProfileView {
       const d = questDef(q.id)!;
       return { id: q.id, text: d.text, progress: q.progress, target: d.target, reward: d.reward, done: q.done };
     }),
+    pve,
   };
 }
 
@@ -37,7 +40,7 @@ export async function profile(repo: Repo, uid: string, now: number): Promise<Pro
     await repo.setQuests(uid, dailyQuests(uid, today), p.quests_rev);
     p = (await repo.getPlayer(uid))!;
   }
-  return view(p, now);
+  return view(p, now, await repo.pveStars(uid));
 }
 
 export type QuestRewards = { completed: QuestDef[]; chest: { boosters: Record<string, number>; crystals: number } | null };

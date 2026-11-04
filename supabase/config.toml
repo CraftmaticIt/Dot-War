@@ -28,3 +28,9 @@ verify_jwt = true
 
 [functions.shop_buy]
 verify_jwt = true
+
+[functions.finish_pve]
+verify_jwt = true
+
+[functions.pve_ranking]
+verify_jwt = true

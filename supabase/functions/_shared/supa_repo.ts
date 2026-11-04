@@ -153,6 +153,42 @@ export class SupaRepo implements Repo {
     const rows = data ?? [];
     return { count: rows.length, loot: rows.reduce((s: number, r: any) => s + (r.result?.loot ?? 0), 0) };
   }
+  async pveRecord(id: string, level: number, stars: number, perStar: number) {
+    const { data, error } = await this.db.rpc("pve_record", { p_id: id, p_level: level, p_stars: stars, p_per_star: perStar });
+    check(error);
+    return Number(data ?? 0);
+  }
+  async pveWeekRecord(id: string, week: number, score: number) {
+    const { error } = await this.db.rpc("pve_week_record", { p_id: id, p_week: week, p_score: score });
+    check(error);
+  }
+  async pveStars(id: string) {
+    const { data, error } = await this.db.from("pve_progress").select("level, stars").eq("player_id", id);
+    check(error);
+    const out: Record<string, number> = {};
+    for (const r of data ?? []) if (r.stars > 0) out[String(r.level)] = r.stars;
+    return out;
+  }
+  async pveTop(week: number, limit: number) {
+    const { data, error } = await this.db.from("pve_weekly").select("player_id, score").eq("week", week)
+      .order("score", { ascending: false }).order("player_id", { ascending: true }).limit(limit);
+    check(error);
+    return (data ?? []).map((r: any) => ({ player: r.player_id, score: r.score }));
+  }
+  async pveRank(id: string, week: number) {
+    const { data, error } = await this.db.from("pve_weekly").select("score").eq("player_id", id).eq("week", week).maybeSingle();
+    check(error);
+    if (!data) return null;
+    const { count, error: e2 } = await this.db.from("pve_weekly").select("player_id", { count: "exact", head: true })
+      .eq("week", week).gt("score", data.score);
+    check(e2);
+    return { score: data.score, rank: 1 + (count ?? 0) };
+  }
+  async settlePveWeek(week: number, topPct: number, crystals: number, boosters: Record<string, number>) {
+    const { data, error } = await this.db.rpc("settle_pve_week", { p_week: week, p_top_pct: topPct, p_crystals: crystals, p_boosters: boosters });
+    check(error);
+    return data === true;
+  }
 }
 
 export function makeDeps(): Deps {

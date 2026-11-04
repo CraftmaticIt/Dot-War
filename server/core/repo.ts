@@ -56,6 +56,18 @@ export interface Repo {
   openAttacks(olderThan: number): Promise<AttackRow[]>;
   openAttacksBy(attacker: string): Promise<AttackRow[]>;
   defensesSince(defender: string, since: number): Promise<{ count: number; loot: number }>;
+  /** stars = max(old, new); crystals += (new - old)+ * perStar (mirrored). Returns gained stars. */
+  pveRecord(id: string, level: number, stars: number, perStar: number): Promise<number>;
+  /** score = max(old, new) for (player, week). */
+  pveWeekRecord(id: string, week: number, score: number): Promise<void>;
+  pveStars(id: string): Promise<Record<string, number>>;
+  /** Ordered by score desc, then player asc. */
+  pveTop(week: number, limit: number): Promise<{ player: string; score: number }[]>;
+  /** rank = 1 + players with a higher score; null when the player has no score this week. */
+  pveRank(id: string, week: number): Promise<{ score: number; rank: number } | null>;
+  /** Once per week: players with score > 0 within the top `topPct`% (at least 1; ties at the
+   *  threshold included) get crystals + boosters. false when the week was already settled. */
+  settlePveWeek(week: number, topPct: number, crystals: number, boosters: Record<string, number>): Promise<boolean>;
 }
 
 const clone = <T>(x: T): T => structuredClone(x);
@@ -65,6 +77,9 @@ export class MemoryRepo implements Repo {
   players = new Map<string, Player>();
   colonies = new Map<string, ColonyRow>();
   attacks = new Map<string, AttackRow>();
+  pve = new Map<string, Map<number, number>>();       // player -> level -> stars
+  weekly = new Map<number, Map<string, number>>();    // week -> player -> score
+  settledWeeks = new Set<number>();
   private nextId = 1;
 
   newId(): string { return `a${this.nextId++}`; }
@@ -199,6 +214,56 @@ export class MemoryRepo implements Repo {
   }
   async openAttacksBy(attacker: string) {
     return [...this.attacks.values()].filter((a) => a.status === "open" && a.attacker === attacker).map(clone);
+  }
+  async pveRecord(id: string, level: number, stars: number, perStar: number) {
+    if (!this.players.has(id)) return 0;
+    const m = this.pve.get(id) ?? new Map<number, number>();
+    this.pve.set(id, m);
+    const old = m.get(level) ?? 0;
+    if (stars <= old) return 0;
+    m.set(level, stars);
+    const p = this.players.get(id)!;
+    p.crystals += (stars - old) * perStar;
+    this.mirror(id);
+    return stars - old;
+  }
+  async pveWeekRecord(id: string, week: number, score: number) {
+    const m = this.weekly.get(week) ?? new Map<string, number>();
+    this.weekly.set(week, m);
+    m.set(id, Math.max(m.get(id) ?? 0, score));
+  }
+  async pveStars(id: string) {
+    const out: Record<string, number> = {};
+    for (const [l, s] of this.pve.get(id) ?? []) out[String(l)] = s;
+    return out;
+  }
+  private ranked(week: number) {
+    return [...(this.weekly.get(week) ?? [])].map(([player, score]) => ({ player, score }))
+      .sort((a, b) => b.score - a.score || (a.player < b.player ? -1 : a.player > b.player ? 1 : 0));
+  }
+  async pveTop(week: number, limit: number) { return this.ranked(week).slice(0, limit); }
+  async pveRank(id: string, week: number) {
+    const m = this.weekly.get(week);
+    if (!m || !m.has(id)) return null;
+    const score = m.get(id)!;
+    return { score, rank: 1 + [...m.values()].filter((s) => s > score).length };
+  }
+  async settlePveWeek(week: number, topPct: number, crystals: number, boosters: Record<string, number>) {
+    if (this.settledWeeks.has(week)) return false;
+    this.settledWeeks.add(week);
+    const scored = this.ranked(week).filter((r) => r.score > 0);
+    if (!scored.length) return true;
+    const k = Math.max(1, Math.trunc((scored.length * topPct) / 100));
+    const threshold = scored[k - 1].score;
+    for (const r of scored) {
+      if (r.score < threshold) break;
+      const p = this.players.get(r.player);
+      if (!p) continue;
+      for (const [b, n] of Object.entries(boosters)) p.boosters[b] = (p.boosters[b] ?? 0) + n;
+      p.crystals += crystals;
+      this.mirror(r.player);
+    }
+    return true;
   }
   async defensesSince(defender: string, since: number) {
     let count = 0, loot = 0;

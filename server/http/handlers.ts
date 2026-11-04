@@ -5,6 +5,7 @@ import { findOpponent } from "../core/matchmaking.ts";
 import { finishAttack } from "../core/finish.ts";
 import { shopBuy } from "../core/shop.ts";
 import { profile } from "../core/profile.ts";
+import { finishPve, pveRanking } from "../core/pve.ts";
 
 export type Deps = {
   repo: Repo;
@@ -15,7 +16,7 @@ export type Deps = {
 };
 
 const STATUS: Record<string, number> = {
-  bad_colony: 400, bad_json: 400, bad_item: 400, no_crystals: 409, no_boosters: 409, few_dots: 409, no_colony: 409, abandoned: 409, in_progress: 409, busy: 409, not_found: 404, forbidden: 403,
+  bad_colony: 400, bad_level: 400, bad_placement: 400, bad_week: 409, locked: 409, bad_json: 400, bad_item: 400, no_crystals: 409, no_boosters: 409, few_dots: 409, no_colony: 409, abandoned: 409, in_progress: 409, busy: 409, not_found: 404, forbidden: 403,
 };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -59,4 +60,16 @@ export async function handleShop(req: Request, deps: Deps): Promise<Response> {
   const p = await prologue(req, deps);
   if (p instanceof Response) return p;
   return reply(await shopBuy(deps.repo, p.uid, p.body?.item, deps.now()));
+}
+
+export async function handleFinishPve(req: Request, deps: Deps): Promise<Response> {
+  const p = await prologue(req, deps);
+  if (p instanceof Response) return p;
+  return reply(await finishPve(deps.repo, p.uid, p.body, deps.now()));
+}
+
+export async function handlePveRanking(req: Request, deps: Deps): Promise<Response> {
+  const p = await prologue(req, deps);
+  if (p instanceof Response) return p;
+  return reply(await pveRanking(deps.repo, p.uid, deps.now()));
 }
