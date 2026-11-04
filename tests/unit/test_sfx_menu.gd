@@ -11,14 +11,14 @@ func test_tone_is_16bit_pcm_of_right_length_and_not_silent():
 		peak = maxi(peak, absi(d.decode_s16(i)))
 	assert_between(peak, 1000, 32767)
 
-func test_menu_has_three_buttons_and_help_lists_every_topic():
+func test_menu_buttons_and_help_lists_every_topic():
 	var m: Control = MENU.new()
 	add_child_autofree(m)
 	var labels := []
 	for c in m._box.get_children():
 		if c is Button:
 			labels.append(c.text)
-	assert_eq(labels, ["Graj", "Jak grać", "Ustawienia"])
+	assert_eq(labels, ["Graj", "Kampania", "Arena tygodnia", "Jak grać", "Ustawienia"])
 	m._help()
 	var texts := 0
 	for c in m._box.get_children():

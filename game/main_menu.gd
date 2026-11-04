@@ -8,6 +8,9 @@ const HELP := [
 	["Gwiazdki", "★ za 50% zniszczonych węzłów, ★ za Rdzeń, ★ za 100%. Gwiazdki dają łup energii i trofea; porażka zabiera trofea."],
 	["Boostery", "Przed atakiem wybierz do 3 boosterów (Meta → Boostery). W walce stuknij booster, potem węzeł: Szał przyspiesza, Tarcza chroni, EMP wyłącza wieże, Rozszczepienie podwaja grupę."],
 	["Meta", "Zadania dzienne, sklep za kryształy i liga. Sezon trwa 14 dni – nagroda zależy od ligi."],
+	["Kampania", "15 łamigłówek obrony: rozstaw podane budynki na polach „+”, naciśnij Start i patrz. ★ Rdzeń przetrwał, ★★ straciłeś najwyżej 1 węzeł, ★★★ nic. Za każdą nową gwiazdkę 5 kryształów."],
+	["Arena tygodnia", "Co tydzień nowe fale bez końca. Masz 12 punktów na budynki; wynik to liczba przetrwanych fal. Najlepsze 10% tygodnia dostaje nagrodę."],
+	["Typy kropek", "Szybkie (×1,5 prędkości), pancerne (połowa obrażeń od wież), rozpryskowe (gdy zginą, zabierają 5 kropek pobliskim węzłom)."],
 ]
 
 var _box: VBoxContainer
@@ -61,19 +64,24 @@ func _main() -> void:
 	_title("DOT WAR", 72)
 	_title("Rój neonowych kropek. Buduj, broń się, atakuj.", 20, Color(1, 1, 1, 0.6))
 	_button("Graj", func(): get_tree().change_scene_to_file("res://game/colony_view.tscn"))
+	_button("Kampania", func(): get_tree().change_scene_to_file("res://game/campaign_view.tscn"))
+	_button("Arena tygodnia", func():
+		PveView.pending = {"arena": true, "week": PveMatch.week_index(int(Time.get_unix_time_from_system()))}
+		get_tree().change_scene_to_file("res://game/pve_view.tscn"))
 	_button("Jak grać", _help)
 	_button("Ustawienia", _settings)
 
 func _help() -> void:
 	_clear()
-	_box.position.y = 20
+	_box.position = Vector2(320, 12)
+	_box.add_theme_constant_override("separation", 6)
 	_title("Jak grać", 36)
 	for h in HELP:
 		var l := Label.new()
 		l.text = "%s — %s" % h
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size = Vector2(500, 0)
-		l.add_theme_font_size_override("font_size", 16)
+		l.custom_minimum_size = Vector2(640, 0)
+		l.add_theme_font_size_override("font_size", 13)
 		_box.add_child(l)
 	_button("Wróć", _back)
 
@@ -103,5 +111,6 @@ func _settings() -> void:
 	_button("Wróć", _back)
 
 func _back() -> void:
-	_box.position.y = 60
+	_box.position = Vector2(390, 60)
+	_box.add_theme_constant_override("separation", 14)
 	_main()
