@@ -103,6 +103,8 @@ func _ready() -> void:
 		colony = res.colony
 		if res.reset:
 			_show_toast("Zapis był uszkodzony – kopia zachowana, start od nowa")
+		if colony.resolve_abandoned_attack():
+			_show_toast("Przerwana bitwa = porażka (%d trofeów)" % ColonyState.ABANDON_TROPHIES)
 		var got := colony.collect(_now())
 		if got.energy > 0 or got.dots > 0:
 			_show_toast("Zebrano +%d energii, +%d kropek" % [got.energy, got.dots])

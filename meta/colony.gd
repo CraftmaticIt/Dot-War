@@ -13,6 +13,7 @@ var dots := 0
 var last_collect := 0
 var trophies := 0
 var attacks := 0
+var attack_open := 0  # 1 between begin_attack and apply_result (abandoned battle = loss)
 var energy_rem := 0  # carried remainder of rate*secs (per 3600)
 var dots_rem := 0
 
@@ -194,7 +195,7 @@ func collect(now: int) -> Dictionary:
 	return {"energy": energy - e0, "dots": dots - d0, "secs": now - start}
 
 const SAVE_VERSION := 1
-const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem", "trophies", "attacks"]
+const _INT_FIELDS := ["energy", "crystals", "dots", "last_collect", "energy_rem", "dots_rem", "trophies", "attacks", "attack_open"]
 const MIN_ATTACK_DOTS := 10
 
 func to_dict() -> Dictionary:
@@ -286,9 +287,20 @@ func begin_attack(now: int) -> Dictionary:
 	dots = 0
 	dots_rem = 0
 	attacks += 1
+	attack_open = 1
 	return {"dots": n, "seed": attacks * 7919 + trophies}
 
 ## Loot may exceed the storage cap (kept, see collect()). Trophies never go below 0.
 func apply_result(r: Dictionary) -> void:
 	energy += int(r.get("loot", 0))
 	trophies = maxi(0, trophies + int(r.get("trophies", 0)))
+	attack_open = 0
+
+const ABANDON_TROPHIES := -8
+
+## An attack that never reported back (app killed mid-battle) counts as a 0-star loss.
+func resolve_abandoned_attack() -> bool:
+	if attack_open == 0:
+		return false
+	apply_result({"loot": 0, "trophies": ABANDON_TROPHIES, "stars": 0, "destroyed_pct": 0})
+	return true

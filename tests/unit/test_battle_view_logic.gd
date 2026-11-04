@@ -45,6 +45,7 @@ func test_flow_pending_to_end_screen():
 	var a := c.begin_attack(1_800_000_000)
 	BV.pending = {"colony": c, "dots": a.dots, "seed": a.seed}
 	var v: Node2D = BV.new()
+	v.save_enabled = false
 	add_child_autofree(v)
 	assert_not_null(v.battle)
 	assert_true(BV.pending.is_empty(), "handoff consumed")
@@ -60,3 +61,31 @@ func test_traps_hidden_from_attacker_view():
 	var v: Node2D = BV.new()
 	assert_false(v._visible_node({"id": 1, "trap": 20, "owner": 2}).has("trap"))
 	v.free()
+
+func _started_view(trophies: int) -> Node2D:
+	var c := ColonyState.new_default(1_800_000_000)
+	c.dots = 30
+	c.trophies = trophies
+	var a := c.begin_attack(1_800_000_000)
+	BV.pending = {"colony": c, "dots": a.dots, "seed": a.seed}
+	var v: Node2D = BV.new()
+	v.save_enabled = false
+	add_child_autofree(v)
+	return v
+
+func test_result_applied_when_battle_ends_without_tapping():
+	var v := _started_view(50)
+	v.battle.surrender()
+	v._process(0.016)
+	assert_eq(v.colony.attack_open, 0)
+	assert_eq(v.colony.trophies, 42)
+	v._process(0.016)
+	v._show_end()
+	assert_eq(v.colony.trophies, 42, "applied exactly once")
+
+func test_leaving_mid_battle_counts_as_surrender():
+	var v := _started_view(50)
+	v._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	assert_true(v.battle.over)
+	assert_eq(v.colony.attack_open, 0)
+	assert_eq(v.colony.trophies, 42)

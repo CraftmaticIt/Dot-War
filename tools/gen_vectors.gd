@@ -69,4 +69,13 @@ func _init() -> void:
 	g.link(5, 7); g.link(6, 7); g.link(4, 7)
 	_write("v005_traps_levels", g, 5, [_cmd(0, 1, 1, 3, 30), _cmd(3, 1, 2, 3, 50), _cmd(40, 1, 3, 4, 100),
 		_cmd(70, 1, 1, 5, 60), _cmd(90, 1, 2, 6, 80), _cmd(150, 1, 4, 7, 100)], 230)
+	# v006: ends with a trap still armed (canonical ",t" suffix) and a pulse whose level
+	# changes the outcome (lvl 4 vs 1). Pins both for the TS port.
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 80, 2)
+	g.add_node(2, 6000, 0, 2, 30, 0, "pulse", 0, 4)
+	g.add_node(3, 6000, 6000, 2, 6, 0, "", 20)          # trap, never reached
+	g.add_node(4, 12000, 0, 2, 40, 1)
+	g.link(1, 2); g.link(2, 4); g.link(2, 3)
+	_write("v006_armed_trap_pulse_lvl", g, 6, [_cmd(0, 1, 1, 2, 50), _cmd(20, 1, 1, 2, 50), _cmd(45, 1, 1, 2, 100)], 120)
 	quit()

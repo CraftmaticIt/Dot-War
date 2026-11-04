@@ -5,7 +5,7 @@ const T0 := 1_800_000_000
 func test_garrison_table():
 	assert_eq(Buildings.garrison("core", 2), 60)
 	assert_eq(Buildings.garrison("wall", 3), 75)
-	assert_eq(Buildings.garrison("trap", 4), 0)
+	assert_eq(Buildings.garrison("trap", 4), 24, "disguised like a normal building")
 	assert_eq(Buildings.garrison("mine", 2), 12)
 	assert_eq(Buildings.garrison("laser", 1), 6)
 	assert_eq(Buildings.garrison("mine", 0), 0)
@@ -42,7 +42,7 @@ func test_snapshot_fills_battle_stats():
 	assert_eq(n[Vector2i(0, 1)].tower, "laser")
 	assert_eq(n[Vector2i(0, 1)].tower_lvl, 3)
 	assert_eq(n[Vector2i(-1, 0)].trap, 10)
-	assert_eq(n[Vector2i(-1, 0)].garrison, 0)
+	assert_eq(n[Vector2i(-1, 0)].garrison, 6)
 	assert_eq(n[Vector2i(1, 0)].garrison, 6)
 
 func test_snapshot_ids_match_graph():
@@ -53,3 +53,7 @@ func test_snapshot_ids_match_graph():
 	for id in ids:
 		var pos := Hex.to_fx(ids[id].x, ids[id].y)
 		assert_eq(Vector2i(g.node(id).x, g.node(id).y), pos)
+
+func test_trap_garrison_disguised_as_regular_building():
+	for lvl in range(1, 6):
+		assert_eq(Buildings.garrison("trap", lvl), Buildings.garrison("mine", lvl))

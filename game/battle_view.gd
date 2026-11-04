@@ -16,6 +16,8 @@ var renderer: SwarmRenderer
 var views: Array[NodeView] = []
 var map: Node2D
 var percent := 50
+var save_enabled := true
+var _applied := false
 var _acc := 0.0
 var _hud: Label
 var _end: VBoxContainer
@@ -183,9 +185,33 @@ func _process(delta: float) -> void:
 			get_viewport().get_texture().get_image().save_png(path)
 			get_tree().quit()
 
+## Leaving the battle (back button, app paused/closed) = surrender; the result is
+## applied and saved immediately so it cannot be lost or dodged.
+func _notification(what: int) -> void:
+	if battle == null:
+		return
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST or what == NOTIFICATION_WM_CLOSE_REQUEST \
+			or what == NOTIFICATION_APPLICATION_PAUSED:
+		if not battle.over:
+			battle.surrender()
+		if not _applied:
+			_show_end()
+
+func _apply_once(r: Dictionary) -> void:
+	if _applied or colony == null:
+		_applied = true
+		return
+	_applied = true
+	colony.apply_result(r)
+	if save_enabled and SaveStore.save(colony) != OK:
+		push_warning("BattleView: save failed")
+
 func _show_end() -> void:
+	if _end.visible:
+		return
 	renderer.sync(battle.world, 1.0)
 	var r := battle.result()
+	_apply_once(r)
 	_end.visible = true
 	for t in ["Zwycięstwo!" if r.stars > 0 else "Porażka", stars_text(r.stars),
 			"Zniszczono %d%%" % r.destroyed_pct, "Łup: +%d energii" % r.loot, "Trofea: %+d" % r.trophies]:
@@ -197,9 +223,5 @@ func _show_end() -> void:
 	var back := Button.new()
 	back.text = "Wróć do kolonii"
 	back.custom_minimum_size = Vector2(400, 56)
-	back.pressed.connect(func():
-		if colony != null:
-			colony.apply_result(r)
-			SaveStore.save(colony)
-		get_tree().change_scene_to_file("res://game/colony_view.tscn"))
+	back.pressed.connect(func(): get_tree().change_scene_to_file("res://game/colony_view.tscn"))
 	_end.add_child(back)

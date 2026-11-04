@@ -62,9 +62,7 @@ static func garrison(type: String, level: int) -> int:
 			return 30 * level
 		"wall":
 			return 25 * level
-		"trap":
-			return 0
-	return 6 * level
+	return 6 * level  # traps too: a trap must look like any other building
 
 ## Battle: dots per second produced by the node during an attack.
 static func battle_prod(type: String, level: int) -> int:

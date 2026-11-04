@@ -53,3 +53,24 @@ func test_trophies_roundtrip():
 	var back := ColonyState.from_dict(JSON.parse_string(JSON.stringify(c.to_dict())))
 	assert_eq(back.trophies, 123)
 	assert_eq(back.attacks, 4)
+
+func test_begin_attack_marks_open():
+	var c := _c(20)
+	c.begin_attack(T0)
+	assert_eq(c.attack_open, 1)
+
+func test_apply_result_clears_open():
+	var c := _c(20)
+	c.begin_attack(T0)
+	c.apply_result({"loot": 0, "trophies": 10, "stars": 1, "destroyed_pct": 50})
+	assert_eq(c.attack_open, 0)
+
+func test_abandoned_attack_counts_as_loss():
+	var c := _c(20)
+	c.trophies = 30
+	c.begin_attack(T0)
+	var back := ColonyState.from_dict(JSON.parse_string(JSON.stringify(c.to_dict())))
+	assert_true(back.resolve_abandoned_attack())
+	assert_eq(back.trophies, 22)
+	assert_eq(back.attack_open, 0)
+	assert_false(back.resolve_abandoned_attack(), "only once")

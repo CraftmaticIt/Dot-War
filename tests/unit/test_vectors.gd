@@ -55,3 +55,24 @@ func test_vectors_pin_truncating_division():
 		if ref.state_hash() != int(v.expected_hash):
 			differs = true
 	assert_true(differs)
+
+func test_vectors_pin_armed_trap_suffix():
+	var found := false
+	for f in _vector_files():
+		var v = JSON.parse_string(FileAccess.get_file_as_string(DIR + f))
+		if SimReplay.run(v).canonical().contains(",t"):
+			found = true
+	assert_true(found, "some vector ends with an armed trap in canonical()")
+
+func test_vectors_pin_pulse_level():
+	var differs := false
+	for f in _vector_files():
+		var v = JSON.parse_string(FileAccess.get_file_as_string(DIR + f))
+		var changed := false
+		for n in v.graph.nodes:
+			if n.get("tower", "") == "pulse" and int(n.get("tower_lvl", 1)) > 1:
+				n.tower_lvl = 1
+				changed = true
+		if changed and SimReplay.run(v).state_hash() != int(v.expected_hash):
+			differs = true
+	assert_true(differs, "a vector's hash depends on pulse tower level")
