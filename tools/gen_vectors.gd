@@ -56,4 +56,17 @@ func _init() -> void:
 	g.add_node(6, 17003, 11999, 2, 10, 1, "pulse")
 	g.link(1, 3); g.link(2, 4); g.link(1, 2)
 	_write("v004_negative_dirs", g, 99, [_cmd(0, 1, 1, 3, 50), _cmd(40, 1, 1, 3, 30), _cmd(112, 1, 2, 4, 25)], 150)
+	# v005: hidden trap, wall (big garrison), laser lvl 3, pulse lvl 2; ends mid-flight.
+	g = SimGraph.new()
+	g.add_node(1, 0, 0, 1, 90, 3)
+	g.add_node(2, 0, 6000, 1, 40, 2)
+	g.add_node(3, 6000, 1000, 2, 0, 0, "", 10)          # trap
+	g.add_node(4, 9000, 4000, 2, 50, 0)                 # wall
+	g.add_node(5, 12000, 0, 2, 12, 1, "laser", 0, 3)
+	g.add_node(6, 12000, 7000, 2, 12, 1, "pulse", 0, 2)
+	g.add_node(7, 16000, 3500, 2, 60, 2)                # core
+	g.link(1, 3); g.link(2, 3); g.link(2, 4); g.link(3, 4); g.link(3, 5); g.link(4, 6)
+	g.link(5, 7); g.link(6, 7); g.link(4, 7)
+	_write("v005_traps_levels", g, 5, [_cmd(0, 1, 1, 3, 30), _cmd(3, 1, 2, 3, 50), _cmd(40, 1, 3, 4, 100),
+		_cmd(70, 1, 1, 5, 60), _cmd(90, 1, 2, 6, 80), _cmd(150, 1, 4, 7, 100)], 230)
 	quit()

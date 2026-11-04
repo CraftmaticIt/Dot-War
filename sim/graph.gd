@@ -6,11 +6,14 @@ const TOWERS := ["", "laser", "pulse"]
 var _nodes := {}   # id -> Dictionary
 var _adj := {}     # id -> Array[int] (kept sorted)
 
-func add_node(id: int, x: int, y: int, owner: int, garrison: int, prod_per_sec: int, tower: String = "") -> void:
+## trap: dots killed by the first enemy group arriving (0 = none). tower_lvl scales tower damage.
+func add_node(id: int, x: int, y: int, owner: int, garrison: int, prod_per_sec: int, tower: String = "",
+		trap: int = 0, tower_lvl: int = 1) -> void:
 	assert(tower in TOWERS, "unknown tower: %s" % tower)
 	_nodes[id] = {
 		"id": id, "x": x, "y": y, "owner": owner, "garrison": garrison,
 		"prod_per_sec": prod_per_sec, "tower": tower, "prod_acc": 0,
+		"trap": maxi(trap, 0), "tower_lvl": maxi(tower_lvl, 1),
 	}
 	if not _adj.has(id):
 		_adj[id] = []
@@ -93,7 +96,7 @@ static func from_dict(d: Dictionary) -> SimGraph:
 	var g := SimGraph.new()
 	for n in d.nodes:
 		g.add_node(int(n.id), int(n.x), int(n.y), int(n.owner), int(n.garrison),
-			int(n.prod_per_sec), String(n.get("tower", "")))
+			int(n.prod_per_sec), String(n.get("tower", "")), int(n.get("trap", 0)), int(n.get("tower_lvl", 1)))
 		g._nodes[int(n.id)].prod_acc = int(n.get("prod_acc", 0))
 	for l in d.links:
 		g.link(int(l[0]), int(l[1]))

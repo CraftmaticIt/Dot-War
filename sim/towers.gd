@@ -17,6 +17,7 @@ static func apply(world: SimWorld) -> void:
 		if n.tower == "" or n.owner == 0:
 			continue
 		var spec: Dictionary = SPECS[n.tower]
+		var dmg: int = spec.dmg * (2 + n.tower_lvl) / 3  # lvl 1 = base damage
 		if n.tower == "laser":
 			var target := {}
 			var best := 0
@@ -29,14 +30,14 @@ static func apply(world: SimWorld) -> void:
 					target = g
 					best = d
 			if not target.is_empty():
-				_hit(target, spec.dmg)
+				_hit(target, dmg)
 		else:
 			for g in world.groups:
 				if g.owner == n.owner or g.count <= 0:
 					continue
 				var p: Vector2i = pos[g.id]
 				if Fx.dist(n.x, n.y, p.x, p.y) <= spec.range:
-					_hit(g, spec.dmg)
+					_hit(g, dmg)
 	var alive: Array[Dictionary] = []
 	for g in world.groups:
 		if g.count > 0:

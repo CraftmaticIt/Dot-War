@@ -137,6 +137,13 @@ func _arrive(g: Dictionary, node_id: int) -> void:
 	if n.owner == g.owner:
 		n.garrison += g.count
 		return
+	if n.trap > 0:
+		var kill: int = mini(n.trap, g.count)
+		g.count -= kill
+		n.trap = 0
+		events.append({"type": "trap_triggered", "node": node_id, "group": g.id, "killed": kill})
+		if g.count == 0:
+			return
 	n.garrison -= g.count
 	if n.garrison < 0:
 		n.owner = g.owner
@@ -161,7 +168,10 @@ func canonical() -> String:
 	var parts := PackedStringArray(["t%d" % tick])
 	for id in graph.node_ids():
 		var n := graph.node(id)
-		parts.append("n%d,%d,%d,%d" % [id, n.owner, n.garrison, n.prod_acc])
+		var seg := "n%d,%d,%d,%d" % [id, n.owner, n.garrison, n.prod_acc]
+		if n.trap > 0:
+			seg += ",t%d" % n.trap  # only armed traps: keeps pre-trap vector hashes stable
+		parts.append(seg)
 	for g in groups:
 		var p := PackedStringArray()
 		for v in g.path:
