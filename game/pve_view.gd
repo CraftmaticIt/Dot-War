@@ -29,6 +29,8 @@ var _acc := 0.0
 var _shot := ""
 var _elapsed := 0.0
 var _font: Font
+var percent := 50
+var _percents: HBoxContainer
 
 # --- pure helpers (unit-tested) ---
 
@@ -154,6 +156,14 @@ func _rebuild_map() -> void:
 	_overlay = Node2D.new()
 	_overlay.draw.connect(_draw_overlay)
 	_map.add_child(_overlay)
+	if match_ != null:
+		var input := InputSend.new()   # drag from your node to another: send dots (like an attack)
+		input.world = match_.world
+		input.views = _views
+		input.send_requested.connect(func(from: int, to: int):
+			match_.send(from, to, percent)
+			_sfx("send"))
+		_map.add_child(input)
 
 ## Slot markers: "+" on a free slot during setup, the building letter on a placed one;
 ## "C" on the core and "!" on enemy spawns.
@@ -201,6 +211,20 @@ func _build_ui() -> void:
 	back.position = Vector2(1140, 12)
 	back.pressed.connect(_go_back)
 	layer.add_child(back)
+	_percents = HBoxContainer.new()
+	_percents.position = Vector2(16, 600)
+	_percents.visible = false
+	var group := ButtonGroup.new()
+	for p in BattleView.PERCENTS:
+		var b := Button.new()
+		b.text = "%d%%" % p
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = p == percent
+		b.custom_minimum_size = Vector2(72, 44)
+		b.pressed.connect(func(): percent = p)
+		_percents.add_child(b)
+	layer.add_child(_percents)
 	_end = VBoxContainer.new()
 	_end.position = Vector2(440, 200)
 	_end.custom_minimum_size = Vector2(400, 0)
@@ -240,8 +264,9 @@ func _refresh_setup() -> void:
 func _unhandled_input(e: InputEvent) -> void:
 	if match_ != null or _map == null:
 		return
-	var tap: bool = (e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed) \
-		or (e is InputEventScreenTouch and e.pressed)
+	# Mouse only: on phones Godot also emits a mouse click for every touch, so handling both
+	# would place and remove the building in one tap (same as colony_view).
+	var tap: bool = e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed
 	if not tap:
 		return
 	var p: Vector2 = _map.get_global_transform().affine_inverse() * e.position
@@ -279,7 +304,8 @@ func _on_start() -> void:
 	match_ = PveMatch.new(level, placement, 1)
 	_palette.visible = false
 	_start.visible = false
-	_info.text = "Rój nadciąga…"
+	_percents.visible = true
+	_info.text = "Przeciągnij od swojego węzła do innego, żeby wysłać kropki (nie do węzłów startowych wroga)."
 	_rebuild_map()
 
 func _process(delta: float) -> void:
@@ -322,7 +348,7 @@ func _finish() -> void:
 	_end.add_child(wait)
 	var reward := {"offline": true}
 	if _shot == "" and backend != null and backend.is_configured():
-		var body := {"placement": placement}
+		var body := {"placement": placement, "commands": match_.commands}
 		if arena:
 			body["week"] = int(level.week)
 		else:

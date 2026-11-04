@@ -1,0 +1,41 @@
+{
+  "level": 1,
+  "placement": [],
+  "seed": 1,
+  "commands": [
+    {
+      "tick": 5,
+      "from": 1,
+      "to": 2,
+      "percent": 50
+    },
+    {
+      "tick": 150,
+      "from": 2,
+      "to": 1,
+      "percent": 100
+    },
+    {
+      "tick": 160,
+      "from": 1,
+      "to": 9,
+      "percent": 100
+    },
+    {
+      "tick": 200,
+      "from": 1,
+      "to": 2,
+      "percent": 25
+    }
+  ],
+  "expected": {
+    "result": {
+      "stars": 0,
+      "lost": 1,
+      "score": 4,
+      "waves_started": 5,
+      "ticks": 374
+    },
+    "hash": 1924310759
+  }
+}

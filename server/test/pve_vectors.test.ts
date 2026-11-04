@@ -13,7 +13,7 @@ for (const f of files) {
   test(`pve vector ${f}`, () => {
     const v = JSON.parse(readFileSync(new URL(f, DIR), "utf8"));
     const lvl = v.week !== undefined ? arenaLevel(v.week) : level(v.level)!;
-    const r = runPve(lvl, v.placement, v.seed);
+    const r = runPve(lvl, v.placement, v.seed, v.commands ?? []);
     assert.deepEqual(r.result, v.expected.result);
     assert.equal(r.hash, v.expected.hash);
   });

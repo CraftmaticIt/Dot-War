@@ -44,3 +44,40 @@ func test_end_text_server_refusals_are_explained():
 	assert_true("Najpierw zalicz online poprzedni poziom" in lk)
 	var wk := PV.end_text({"stars": 0, "score": 4}, true, {"error": "bad_week"})
 	assert_true("Tydzień areny się zmienił – zagraj nową arenę" in wk)
+
+## On phones one tap arrives as a touch AND an emulated mouse click: only one may count,
+## otherwise the building is placed and removed again in the same tap.
+func test_one_phone_tap_places_once():
+	PV.pending = {"level": 1}
+	var v: Node2D = PV.new()
+	add_child_autofree(v)
+	v._selected = "laser"
+	var slot_view: NodeView = null
+	for nv in v._views:
+		if nv.node_id == 2:
+			slot_view = nv
+	var screen: Vector2 = v._map.get_global_transform() * slot_view.position
+	var touch := InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.position = screen
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = screen
+	v._unhandled_input(touch)
+	v._unhandled_input(click)
+	assert_eq(v.placement, [{"slot": 2, "type": "laser"}])
+
+func test_after_start_drag_sends_and_is_recorded():
+	PV.pending = {"level": 1}
+	var v: Node2D = PV.new()
+	add_child_autofree(v)
+	v._on_start()
+	var input: InputSend = null
+	for c in v._map.get_children():
+		if c is InputSend:
+			input = c
+	assert_not_null(input, "drag input active during the run")
+	input.send_requested.emit(1, 2)
+	assert_eq(v.match_.commands.size(), 1)
+	assert_eq(int(v.match_.commands[0].percent), 50)

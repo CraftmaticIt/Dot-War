@@ -4,7 +4,7 @@ extends SceneTree
 
 func _write(name: String, v: Dictionary) -> void:
 	var lvl: Dictionary = PveMatch.arena_level(int(v.week)) if v.has("week") else PveDefs.level(int(v.level))
-	var r := PveMatch.run(lvl, v.placement, int(v.seed))
+	var r := PveMatch.run(lvl, v.placement, int(v.seed), v.get("commands", []))
 	v["expected"] = r
 	var f := FileAccess.open("res://tests/pve_vectors/%s.json" % name, FileAccess.WRITE)
 	f.store_string(JSON.stringify(v, "  ", false) + "\n")
@@ -17,4 +17,8 @@ func _init() -> void:
 		{"slot": 5, "type": "pulse"}, {"slot": 8, "type": "wall"}, {"slot": 9, "type": "trap"}, {"slot": 3, "type": "wall"}]})
 	# p004: empty slots on the path are captured and their garrison forwarded to the core.
 	_write("p004_level7_forwarding", {"level": 7, "placement": [], "seed": 1})
+	# p005: player sends (reinforce a slot, pull back, a send into the spawn that must be ignored).
+	_write("p005_level1_commands", {"level": 1, "placement": [], "seed": 1, "commands": [
+		{"tick": 5, "from": 1, "to": 2, "percent": 50}, {"tick": 150, "from": 2, "to": 1, "percent": 100},
+		{"tick": 160, "from": 1, "to": 9, "percent": 100}, {"tick": 200, "from": 1, "to": 2, "percent": 25}]})
 	quit()

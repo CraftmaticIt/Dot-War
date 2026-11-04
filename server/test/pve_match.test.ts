@@ -1,7 +1,7 @@
 // Mirrors tests/unit/test_pve_match.gd.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PVE, level, PveMatch, starsFor, arenaLevel, weekIndex, type PveLevelDef, type Placement } from "../game/pve.ts";
+import { PVE, level, PveMatch, starsFor, arenaLevel, weekIndex, runPve, type PveLevelDef, type Placement } from "../game/pve.ts";
 
 function run(lvl: PveLevelDef, p: Placement) {
   const m = new PveMatch(lvl, p, 1);
@@ -35,4 +35,23 @@ test("arena level per week", () => {
 test("week index", () => {
   const e = PVE.weekly.epoch;
   assert.deepEqual([weekIndex(e), weekIndex(e + 604799), weekIndex(e + 604800)], [0, 0, 1]);
+});
+
+test("player sends: replayable, spawns off-limits, junk ignored", () => {
+  const l = level(1)!;
+  const m = new PveMatch(l, [], 1);
+  m.step();
+  m.send(1, 2, 50);
+  m.step();
+  assert.deepEqual(m.commands, [{ tick: 1, from: 1, to: 2, percent: 50 }]);
+  const a = runPve(l, [], 1, m.commands);
+  assert.equal(a.hash, runPve(l, [], 1, m.commands).hash);
+  assert.notEqual(a.hash, runPve(l, [], 1).hash);
+  const s = new PveMatch(l, [], 1);
+  s.send(1, 9, 100);
+  s.step();
+  assert.equal(s.world.groups.length, 0);
+  const junk: any[] = [{ tick: "x", from: 1, to: 2, percent: 50 }, "bad", { tick: 3 }, null,
+    { tick: 2, from: 1, to: 2, percent: 50, type: "spawn", owner: 2 }];
+  assert.equal(runPve(l, [{ slot: 2, type: "laser" }], 1, junk).result.stars, 3);
 });

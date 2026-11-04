@@ -64,3 +64,30 @@ func test_campaign_safety_limit():
 	while not m.over:
 		m.step()
 	assert_lte(m.world.tick, PveMatch.CAMPAIGN_TICKS)
+
+func test_player_send_reinforces_and_is_replayable():
+	var l := PveDefs.level(1)
+	var m := PveMatch.new(l, [], 1)
+	m.step()
+	m.send(1, 2, 50)                     # core -> empty slot at tick 1
+	m.step()
+	assert_eq(m.commands, [{"tick": 1, "from": 1, "to": 2, "percent": 50}])
+	assert_eq(m.world.groups.filter(func(g): return g.owner == 1).size(), 1)
+	var a := PveMatch.run(l, [], 1, m.commands)
+	var b := PveMatch.run(l, [], 1, m.commands)
+	assert_eq(a.hash, b.hash)
+	assert_ne(a.hash, PveMatch.run(l, [], 1).hash, "commands change the outcome")
+
+func test_player_cannot_send_into_or_through_spawns():
+	var l := PveDefs.level(1)
+	var m := PveMatch.new(l, [], 1)
+	m.send(1, 9, 100)                    # spawn: ignored
+	m.step()
+	assert_eq(m.world.groups.size(), 0)
+	assert_eq(m.world.graph.node(9).owner, PveLevel.ENEMY)
+
+func test_malformed_commands_are_ignored():
+	var l := PveDefs.level(1)
+	var junk := [{"tick": "x", "from": 1, "to": 2, "percent": 50}, "bad", {"tick": 3}, {"tick": 2, "from": 1, "to": 2, "percent": 50, "type": "spawn", "owner": 2}]
+	var r := PveMatch.run(l, [{"slot": 2, "type": "laser"}], 1, junk)
+	assert_eq(int(r.result.stars), 3)

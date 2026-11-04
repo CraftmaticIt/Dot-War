@@ -59,7 +59,9 @@ Data: 2026-11-04 · Status: zaakceptowany projekt (właściciel)
 - Walidacja rozstawienia (klient i serwer, ta sama funkcja): slot istnieje i ma rolę `slot`, bez duplikatów,
   typ w `allowed` (kampania) lub w `costs` (arena), liczba sztuk ≤ limit / suma kosztów ≤ budżet.
   Błąd → `bad_placement`, brak meczu.
-- Gracz w trakcie meczu nic nie steruje (czysta łamigłówka rozstawienia) → replay = rozstawienie.
+- Gracz może w trakcie meczu wysyłać kropki ze swoich węzłów (`{tick, from, to, percent}`, jak w ataku),
+  ale nigdy do ani przez węzeł spawn (inaczej przejęcie spawnu zatrzymałoby fale). Replay = rozstawienie + komendy
+  (max 2000). Decyzja właściciela po teście na telefonie (2026-11-04).
 - Koniec kampanii: Rdzeń przejęty (porażka, 0★) albo wszystkie fale wypuszczone i brak wrogich grup.
   Limit bezpieczeństwa 12000 ticków. Gwiazdki: 1 + (stracone ≤ 1) + (stracone == 0), gdy Rdzeń żyje;
   „stracone” = węzły gracza na starcie (Rdzeń + budynki) przejęte przez wroga.

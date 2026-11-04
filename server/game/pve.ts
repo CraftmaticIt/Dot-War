@@ -71,16 +71,21 @@ export const playerNodes = (lvl: PveLevelDef, placement: Placement): number[] =>
 export const CAMPAIGN_TICKS = 12000;
 export const ARENA_TAIL_TICKS = 2400;
 export const WEEK_SECS = 604800;
+export const MAX_COMMANDS = 2000;
+export type PveCmd = { tick: number; from: number; to: number; percent: number };
 export type PveResult = { stars: number; lost: number; score: number; waves_started: number; ticks: number };
 
 export const starsFor = (coreLost: boolean, lost: number): number =>
   coreLost ? 0 : 1 + (lost <= 1 ? 1 : 0) + (lost === 0 ? 1 : 0);
 
-/** PvE defense (port of pve/pve_match.gd): waves march on the core; enemy-held nodes forward
- *  their garrison to the core every tick. The placement is the whole replay. */
+/** PvE defense (port of pve/pve_match.gd): waves march on the core; the player may send dots
+ *  from own nodes (never into or through a spawn); enemy-held nodes forward their garrison to the
+ *  core every tick. Placement + player commands are the whole replay. */
 export class PveMatch {
   world: SimWorld;
   over = false;
+  commands: PveCmd[] = [];
+  private cmds: PveCmd[] = [];
   private core: number;
   private start: number[];
   private spawns: Set<number>;
@@ -99,9 +104,41 @@ export class PveMatch {
     this.limit = lvl.arena ? last + ARENA_TAIL_TICKS : CAMPAIGN_TICKS;
   }
 
+  send(from: number, to: number, percent: number): void {
+    if (this.over) return;
+    const c = { tick: this.world.tick, from, to, percent };
+    this.commands.push(c);
+    this.cmds.push(c);
+  }
+
+  /** Untrusted replay input: only well-formed {tick, from, to, percent} entries are kept. */
+  loadCommands(cmds: unknown): void {
+    if (!Array.isArray(cmds)) return;
+    for (const c of cmds.slice(0, MAX_COMMANDS)) {
+      if (c === null || typeof c !== "object") continue;
+      const ks = ["tick", "from", "to", "percent"] as const;
+      if (ks.some((k) => typeof (c as any)[k] !== "number" || !Number.isFinite((c as any)[k]))) continue;
+      this.cmds.push({ tick: Math.trunc(c.tick), from: Math.trunc(c.from), to: Math.trunc(c.to), percent: Math.trunc(c.percent) });
+    }
+  }
+
+  private touchesSpawn(from: number, to: number): boolean {
+    if (this.spawns.has(from) || this.spawns.has(to)) return true;
+    const g = this.world.graph;
+    if (!g.hasNode(from) || !g.hasNode(to)) return false;
+    return g.path(from, to).some((id) => this.spawns.has(id));
+  }
+
   step(): void {
     if (this.over) return;
     const w = this.world, t = w.tick;
+    const later: PveCmd[] = [];
+    for (const c of this.cmds) {
+      if (c.tick === t) {
+        if (!this.touchesSpawn(c.from, c.to)) w.queue({ tick: t, type: "send", owner: PLAYER, from: c.from, to: c.to, percent: c.percent });
+      } else if (c.tick > t) later.push(c);
+    }
+    this.cmds = later;
     for (const wv of this.waves) {
       if (wv.tick === t) {
         w.queue({ tick: t, type: "spawn", owner: ENEMY, node: wv.node, to: this.core, count: wv.count, kind: wv.kind });
@@ -138,8 +175,9 @@ export class PveMatch {
 }
 
 /** Runs to the end: {result, hash} (PvE vectors, server replay). */
-export function runPve(lvl: PveLevelDef, placement: Placement, seed: number): { result: PveResult; hash: number } {
+export function runPve(lvl: PveLevelDef, placement: Placement, seed: number, cmds: unknown = []): { result: PveResult; hash: number } {
   const m = new PveMatch(lvl, placement, seed);
+  m.loadCommands(cmds);
   while (!m.over) m.step();
   return { result: m.result(), hash: m.world.stateHash() };
 }

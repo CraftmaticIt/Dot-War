@@ -8,7 +8,7 @@ const HELP := [
 	["Gwiazdki", "★ za 50% zniszczonych węzłów, ★ za Rdzeń, ★ za 100%. Gwiazdki dają łup energii i trofea; porażka zabiera trofea."],
 	["Boostery", "Przed atakiem wybierz do 3 boosterów (Meta → Boostery). W walce stuknij booster, potem węzeł: Szał przyspiesza, Tarcza chroni, EMP wyłącza wieże, Rozszczepienie podwaja grupę."],
 	["Meta", "Zadania dzienne, sklep za kryształy i liga. Sezon trwa 14 dni – nagroda zależy od ligi."],
-	["Kampania", "15 łamigłówek obrony: rozstaw podane budynki na polach „+”, naciśnij Start i patrz. ★ Rdzeń przetrwał, ★★ straciłeś najwyżej 1 węzeł, ★★★ nic. Za każdą nową gwiazdkę 5 kryształów."],
+	["Kampania", "15 łamigłówek obrony: rozstaw podane budynki na polach „+” i naciśnij Start; w trakcie przeciągaj kropki ze swoich węzłów, żeby wzmacniać obronę (nie do węzłów startowych wroga). ★ Rdzeń przetrwał, ★★ straciłeś najwyżej 1 węzeł, ★★★ nic. Za każdą nową gwiazdkę 5 kryształów."],
 	["Arena tygodnia", "Co tydzień nowe fale bez końca. Masz 12 punktów na budynki; wynik to liczba przetrwanych fal. Najlepsze 10% tygodnia dostaje nagrodę."],
 	["Typy kropek", "Szybkie (×1,5 prędkości), pancerne (połowa obrażeń od wież), rozpryskowe (gdy zginą, zabierają 5 kropek pobliskim węzłom)."],
 ]

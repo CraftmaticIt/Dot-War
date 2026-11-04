@@ -22,7 +22,7 @@ export async function finishPve(repo: Repo, uid: string, body: any, now: number)
     }
     const lvl = arenaLevel(body.week);
     if (validate(lvl, body.placement, true)) return { error: "bad_placement" };
-    const { result } = runPve(lvl, body.placement as Placement, PVE_SEED);
+    const { result } = runPve(lvl, body.placement as Placement, PVE_SEED, body.commands);
     await repo.pveWeekRecord(uid, body.week, result.score);
     const best = (await repo.pveRank(uid, body.week))?.score ?? result.score;
     return { score: result.score, best, profile: await profile(repo, uid, now) };
@@ -32,7 +32,7 @@ export async function finishPve(repo: Repo, uid: string, body: any, now: number)
   if (!lvl) return { error: "bad_level" };
   if (validate(lvl, body.placement, false)) return { error: "bad_placement" };
   if (id > 1 && ((await repo.pveStars(uid))[String(id - 1)] ?? 0) < 1) return { error: "locked" };
-  const { result } = runPve(lvl, body.placement as Placement, PVE_SEED);
+  const { result } = runPve(lvl, body.placement as Placement, PVE_SEED, body.commands);
   const gained = await repo.pveRecord(uid, id, result.stars, PVE.star_crystals);
   return { stars: result.stars, gained, crystals: gained * PVE.star_crystals, profile: await profile(repo, uid, now) };
 }

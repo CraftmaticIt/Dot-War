@@ -1,12 +1,17 @@
 class_name PveMatch
-## PvE defense: waves of enemy dots (spawn commands) march on the core; the player only placed
-## buildings. Enemy-held nodes forward their garrison to the core every tick (the AI swarm).
-## The placement is the whole replay, so the server re-runs this to verify a result.
+## PvE defense: waves of enemy dots (spawn commands) march on the core. The player placed
+## buildings and may send dots from their own nodes (never into or through a spawn).
+## Enemy-held nodes forward their garrison to the core every tick (the AI swarm).
+## Placement + player commands are the whole replay; the server re-runs this to verify a result.
 
 const CAMPAIGN_TICKS := 12000
 const ARENA_TAIL_TICKS := 2400   # arena: time after the last wave for the field to clear
 const WEEK_SECS := 604800
+const MAX_COMMANDS := 2000
 
+## Player sends recorded as {tick, from, to, percent} (the replay input).
+var commands: Array = []
+var _cmds: Array = []   # pending, applied at their tick before the waves
 var world: SimWorld
 var over := false
 var _level: Dictionary
@@ -32,10 +37,51 @@ func _init(level: Dictionary, placement: Array, seed: int) -> void:
 		last = maxi(last, int(w.tick))
 	_limit = last + ARENA_TAIL_TICKS if level.get("arena", false) else CAMPAIGN_TICKS
 
+## Player send at the current tick (live play); recorded for the server replay.
+func send(from: int, to: int, percent: int) -> void:
+	if over:
+		return
+	var c := {"tick": world.tick, "from": from, "to": to, "percent": percent}
+	commands.append(c)
+	_cmds.append(c)
+
+## Untrusted replay input: only well-formed {tick, from, to, percent} entries are kept.
+func load_commands(cmds) -> void:
+	if typeof(cmds) != TYPE_ARRAY:
+		return
+	for c in cmds.slice(0, MAX_COMMANDS):
+		if typeof(c) != TYPE_DICTIONARY:
+			continue
+		var ok := true
+		for k in ["tick", "from", "to", "percent"]:
+			if typeof(c.get(k)) != TYPE_INT and typeof(c.get(k)) != TYPE_FLOAT:
+				ok = false
+		if ok:
+			_cmds.append({"tick": int(c.tick), "from": int(c.from), "to": int(c.to), "percent": int(c.percent)})
+
+func _touches_spawn(from: int, to: int) -> bool:
+	if _spawns.has(from) or _spawns.has(to):
+		return true
+	if not world.graph.has_node(from) or not world.graph.has_node(to):
+		return false
+	for id in world.graph.path(from, to):
+		if _spawns.has(id):
+			return true
+	return false
+
 func step() -> void:
 	if over:
 		return
 	var t := world.tick
+	var later := []
+	for c in _cmds:
+		if int(c.tick) == t:
+			if not _touches_spawn(int(c.from), int(c.to)):
+				world.queue({"tick": t, "type": "send", "owner": PveLevel.PLAYER, "from": int(c.from), "to": int(c.to),
+					"percent": int(c.percent)})
+		elif int(c.tick) > t:
+			later.append(c)
+	_cmds = later
 	for w in _waves:
 		if int(w.tick) == t:
 			world.queue({"tick": t, "type": "spawn", "owner": PveLevel.ENEMY, "node": int(w.node), "to": _core,
@@ -81,8 +127,9 @@ func result() -> Dictionary:
 		"waves_started": _waves_started, "ticks": world.tick}
 
 ## Runs to the end: {result, hash} (PvE vectors, server replay).
-static func run(level: Dictionary, placement: Array, seed: int) -> Dictionary:
+static func run(level: Dictionary, placement: Array, seed: int, cmds = []) -> Dictionary:
 	var m := PveMatch.new(level, placement, seed)
+	m.load_commands(cmds)
 	while not m.over:
 		m.step()
 	return {"result": m.result(), "hash": m.world.state_hash()}
