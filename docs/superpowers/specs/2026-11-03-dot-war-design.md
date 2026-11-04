@@ -42,6 +42,12 @@ Każdy budynek: 5 poziomów w MVP, koszt Energii + czas budowy.
 - Czas budowy: realny czas + przyspieszanie Kryształami.
 - Offline: zasoby rosną po zamknięciu gry, max 8 h, do limitu magazynu.
 
+### Decyzje etapu 3 (właściciel, 2026-11-04)
+
+- Garnizon obrony stały wg typu i poziomu (nie zużywa zasobów obrońcy).
+- Mur = twardy węzeł (duży garnizon). Pułapka = ukryta; pierwsza wroga grupa traci 10×poziom kropek, potem pusty węzeł.
+- Przeciwnicy do czasu backendu: boty-kolonie generowane wg trofeów (seed → układ).
+
 ## 4. Ekonomia
 
 - **Energia** — z kopalń; budowa/ulepszenia. Łupiona w ataku (max 20% niechronionej).
