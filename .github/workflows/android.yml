@@ -42,3 +42,4 @@ jobs:
         with:
           name: dot-war-debug-apk
           path: build/dot-war-debug.apk
+          retention-days: 14  # ~28 MB per push; only recent builds are useful
